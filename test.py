@@ -22,7 +22,7 @@ cube = Cube(
     )
 
 sel = Selection(
-    y_idx=-2,
+    y_idx=2,
     z_idx=4,
     sel_size=3
     )
@@ -44,7 +44,7 @@ options_grid = FaceDrawOptions(
     line_width=0.1
     )
 
-paths = draw_cube_and_selection(
+ids_to_paths = draw_cube_and_selection(
     face=face,
     cube=cube,
     sel=sel,
@@ -52,15 +52,19 @@ paths = draw_cube_and_selection(
     options_grid=options_grid
     )
 
+svg = create_svg(ids_to_paths, width=1200, height=1200)
+with open('test_svg.svg','w') as f:
+    f.write(svg)
+
 # creating a SVG surface
 # here geek is file name & 700, 700 is dimension
-with cairo.SVGSurface("test.svg", 1200, 1200) as surface:
+with cairo.SVGSurface("test_cairo.svg", 1200, 1200) as surface:
   
     # creating a cairo context object
     context = cairo.Context(surface)
 
     # Draw paths
-    render_cairo(context, paths)
+    render_cairo(context, ids_to_paths)
 
     '''
 

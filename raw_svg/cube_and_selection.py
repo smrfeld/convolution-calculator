@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Dict
 
 from .face_grid import *
 from .cube import *
@@ -17,7 +17,7 @@ def draw_cube_and_selection_interior(
     sel: Selection, 
     options_grid: FaceDrawOptions, 
     options_sel: FaceDrawOptions
-    ) -> List[Path]:
+    ) -> Dict[str,List[Path]]:
 
     face_sel = Face(
         x_translate=sel.sel_size * face.x_translate,
@@ -33,23 +33,21 @@ def draw_cube_and_selection_interior(
         y_top_left_start=cube.y_top_left_start + sel.z_idx * face.y_translate + sel.y_idx * face.box_dim
         )
 
-    paths = []
+    ids_to_paths = {'sel': [], 'cube': []}
 
-    paths0 = draw_cube( 
+    ids_to_paths['sel'] += draw_cube( 
         face=face_sel,
         cube=cube_sel,
         options=options_sel
         )
-    paths += paths0
 
-    paths0 = draw_cube(
+    ids_to_paths['cube'] += draw_cube(
         face=face,
         cube=cube,
         options=options_grid
         )
-    paths += paths0
 
-    return paths
+    return ids_to_paths
 
 def draw_cube_and_selection_top(
     face: Face, 
@@ -57,13 +55,13 @@ def draw_cube_and_selection_top(
     sel: Selection, 
     options_grid: FaceDrawOptions,
     options_sel: FaceDrawOptions
-    ) -> List[Path]:
+    ) -> Dict[str,List[Path]]:
 
-    paths = []
+    ids_to_paths = {'sel': [], 'cube': []}
 
     # Draw back-left grid part
     if sel.sel_size + sel.z_idx > 0:
-        paths0 = draw_face_left_grid(
+        ids_to_paths['cube'] += draw_face_left_grid(
             face=face,
             ny=cube.ny, 
             nz=sel.z_idx+sel.sel_size, 
@@ -71,9 +69,8 @@ def draw_cube_and_selection_top(
             y_top_left_start=cube.y_top_left_start,
             options=options_grid
             )
-        paths += paths0
 
-        paths0 = draw_face_top_grid( 
+        ids_to_paths['cube'] += draw_face_top_grid( 
             face=face,
             nx=cube.nx, 
             nz=sel.z_idx+sel.sel_size, 
@@ -81,7 +78,6 @@ def draw_cube_and_selection_top(
             y_top_left_start=cube.y_top_left_start,
             options=options_grid
             )
-        paths += paths0
 
     # Draw selection
     cube_sel = Cube(
@@ -91,12 +87,11 @@ def draw_cube_and_selection_top(
         x_top_left_start=cube.x_top_left_start + sel.z_idx*face.x_translate, 
         y_top_left_start=cube.y_top_left_start + sel.z_idx*face.y_translate + sel.y_idx*face.box_dim
         )
-    paths0 = draw_cube( 
+    ids_to_paths['sel'] += draw_cube( 
         face=face, 
         cube=cube_sel,
         options=options_sel
         )
-    paths += paths0
 
     # Draw front grid part
     cube_front = Cube(
@@ -106,14 +101,13 @@ def draw_cube_and_selection_top(
         x_top_left_start=cube.x_top_left_start + max((sel.z_idx + sel.sel_size),0) * face.x_translate, 
         y_top_left_start=cube.y_top_left_start + max((sel.z_idx + sel.sel_size),0) * face.y_translate
         )
-    paths0 = draw_cube( 
+    ids_to_paths['cube'] += draw_cube( 
         face=face,
         cube=cube_front,
         options=options_grid
         )
-    paths += paths0
 
-    return paths
+    return ids_to_paths
 
 def draw_cube_and_selection_top_and_front(
     face: Face, 
@@ -121,16 +115,15 @@ def draw_cube_and_selection_top_and_front(
     sel: Selection,
     options_grid: FaceDrawOptions,
     options_sel: FaceDrawOptions
-    ) -> List[Path]:
+    ) -> Dict[str,List[Path]]:
 
-    paths = []
+    ids_to_paths = {'sel': [], 'cube': []}
 
-    paths0 = draw_cube( 
+    ids_to_paths['cube'] += draw_cube( 
         face=face,
         cube=cube,
         options=options_grid
         )
-    paths += paths0
 
     cube_sel = Cube(
         nx=cube.nx,
@@ -139,14 +132,13 @@ def draw_cube_and_selection_top_and_front(
         x_top_left_start=cube.x_top_left_start + sel.z_idx*face.x_translate, 
         y_top_left_start=cube.y_top_left_start + sel.z_idx*face.y_translate + sel.y_idx*face.box_dim
         )
-    paths0 = draw_cube( 
+    ids_to_paths['sel'] += draw_cube( 
         face=face, 
         cube=cube_sel,
         options=options_sel
         )
-    paths += paths0
 
-    return paths
+    return ids_to_paths
 
 def draw_cube_and_selection_front(
     face: Face, 
@@ -154,16 +146,16 @@ def draw_cube_and_selection_front(
     sel: Selection,
     options_grid: FaceDrawOptions,
     options_sel: FaceDrawOptions
-    ) -> List[Path]:
+    ) -> Dict[str,List[Path]]:
 
-    paths = []
+    ids_to_paths = {'sel': [], 'cube': []}
 
     # Draw bottom grid part
     if cube.ny - sel.y_idx > 0:
         bottom_x_top_left_start = cube.x_top_left_start
         bottom_y_top_left_start = cube.y_top_left_start + max(sel.y_idx,0) * face.box_dim
 
-        paths0 = draw_face_left_grid(
+        ids_to_paths['cube'] += draw_face_left_grid(
             face=face,
             ny=cube.ny-sel.y_idx, 
             nz=cube.nz, 
@@ -171,9 +163,8 @@ def draw_cube_and_selection_front(
             y_top_left_start=bottom_y_top_left_start,
             options=options_grid
             )
-        paths += paths0
 
-        paths0 = draw_face_front_grid( 
+        ids_to_paths['cube'] += draw_face_front_grid( 
             face=face, 
             nx=cube.nx, 
             ny=cube.ny-sel.y_idx, 
@@ -181,7 +172,6 @@ def draw_cube_and_selection_front(
             y_top_left_start=bottom_y_top_left_start + cube.nz * face.y_translate,
             options=options_grid
             )
-        paths += paths0
 
     # Draw selection
     cube_sel = Cube(
@@ -191,12 +181,11 @@ def draw_cube_and_selection_front(
         x_top_left_start=cube.x_top_left_start + sel.z_idx*face.x_translate, 
         y_top_left_start=cube.y_top_left_start + sel.z_idx*face.y_translate + sel.y_idx*face.box_dim
         )
-    paths0 = draw_cube( 
+    ids_to_paths['sel'] += draw_cube( 
         face=face,
         cube=cube_sel,
         options=options_sel
         )
-    paths += paths0
 
     # Draw top grid part
     cube_top = Cube(
@@ -206,14 +195,13 @@ def draw_cube_and_selection_front(
         x_top_left_start=cube.x_top_left_start, 
         y_top_left_start=cube.y_top_left_start
         )
-    paths0 = draw_cube( 
+    ids_to_paths['cube'] += draw_cube( 
         face=face, 
         cube=cube_top,
         options=options_grid
         )
-    paths += paths0
 
-    return paths
+    return ids_to_paths
 
 def draw_cube_and_selection( 
     face: Face, 
@@ -221,8 +209,7 @@ def draw_cube_and_selection(
     sel: Selection,
     options_grid: FaceDrawOptions,
     options_sel: FaceDrawOptions
-    ) -> List[Path]:
-    paths = []
+    ) -> Dict[str,List[Path]]:
 
     if sel.z_idx + sel.sel_size >= cube.nz:
         # Front
