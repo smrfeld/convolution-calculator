@@ -67,9 +67,7 @@ class Path:
         return s
 
 class Paths:
-    entries: Dict[str,List[Path]] = {}
+    entries: Dict[str,Path] = {}
 
     def add_path(self, key: str, path: Path):
-        if not key in self.entries:
-            self.entries[key] = []
-        self.entries[key].append(path)
+        self.entries[key] = path
