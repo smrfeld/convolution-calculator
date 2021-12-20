@@ -5,7 +5,52 @@ from typing import Tuple, Dict
 
 from enum import Enum
 
-from cube_and_selection import *
+from raw_svg import *
+
+face = Face(
+    x_translate=30,
+    y_translate=20,
+    box_dim=50
+    )
+
+cube = Cube(
+    nx=3,
+    ny=6,
+    nz=6,
+    x_top_left_start=100,
+    y_top_left_start=100
+    )
+
+sel = Selection(
+    y_idx=-2,
+    z_idx=4,
+    sel_size=3
+    )
+
+options_sel = FaceDrawOptions(
+        fill=True, 
+        stroke=False,
+        line_col=(0,0,0,1.0), 
+        fill_col_top=(0,0,0.85,1.0),
+        fill_col_left=(0,0,0.7,1.0),
+        fill_col_front=(0,0,1.0,1.0),
+        line_width=0.1
+        )
+
+options_grid = FaceDrawOptions(
+    fill=False, 
+    stroke=True, 
+    line_col=(0,0,0,0.5),
+    line_width=0.1
+    )
+
+paths = draw_cube_and_selection(
+    face=face,
+    cube=cube,
+    sel=sel,
+    options_sel=options_sel,
+    options_grid=options_grid
+    )
 
 # creating a SVG surface
 # here geek is file name & 700, 700 is dimension
@@ -13,71 +58,25 @@ with cairo.SVGSurface("svg.svg", 1200, 1200) as surface:
   
     # creating a cairo context object
     context = cairo.Context(surface)
-    
-    # draw_cube(context, 10, 10, 100, 100, 5, 5)
-    
-    '''
-    draw_cube_top(context, 
-        x_translate=50, 
-        y_translate=50, 
-        x_top_left=50, 
-        y_top_left=50, 
-        width=100
-        )
-    '''
 
-    face = Face(
-        x_translate=30,
-        y_translate=20,
-        box_dim=50
-        )
+    # Draw paths
+    for path in paths:
+        # Draw
+        context.move_to(path.pts[0][0], path.pts[0][1])
+        for ipt in range(1,len(path.pts)):
+            context.line_to(path.pts[ipt][0], path.pts[ipt][1])
 
-    cube = Cube(
-        nx=3,
-        ny=4,
-        nz=6,
-        x_top_left_start=100,
-        y_top_left_start=100
-        )
-
-    sel = Selection(
-        y_idx=-2,
-        z_idx=4,
-        sel_size=3
-        )
-
-    options_sel = FaceDrawOptions(
-            fill=True, 
-            stroke=False,
-            line_col=(0,0,0,1.0), 
-            fill_col_top=(0,0,0.85,1.0),
-            fill_col_left=(0,0,0.7,1.0),
-            fill_col_front=(0,0,1.0,1.0)
-            )
-
-    options_grid = FaceDrawOptions(
-        fill=False, 
-        stroke=True, 
-        line_col=(0,0,0,0.5)
-        )
-
-    draw_cube_and_selection(context,
-        face=face,
-        cube=cube,
-        sel=sel,
-        options_sel=options_sel,
-        options_grid=options_grid
-        )
-
-    '''
-    draw_cube_left(context, 
-        x_translate=30, 
-        y_translate=20, 
-        x_top_left=400, 
-        y_top_left=400, 
-        height=50
-        )
-    '''
+        # Stroke and fill
+        if path.fill:
+            context.set_source_rgba(path.fill_col[0],path.fill_col[1],path.fill_col[2],path.fill_col[3])
+            if path.stroke:
+                context.fill_preserve()
+            else:
+                context.fill()
+        if path.stroke:
+            context.set_line_width(path.line_width)
+            context.set_source_rgba(path.line_col[0],path.line_col[1],path.line_col[2],path.line_col[3])
+            context.stroke()
 
     '''
 

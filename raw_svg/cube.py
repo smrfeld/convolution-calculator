@@ -1,11 +1,8 @@
-import cairo
-import numpy as np
 from dataclasses import dataclass
-from typing import Tuple, Dict
+from typing import List
 
-from enum import Enum
-
-from face_grid import *
+from .face_grid import *
+from .path import *
 
 @dataclass
 class Cube:
@@ -15,9 +12,10 @@ class Cube:
     x_top_left_start: int
     y_top_left_start: int
 
-def draw_cube(context, face: Face, cube: Cube, options: FaceDrawOptions):
+def draw_cube(face: Face, cube: Cube, options: FaceDrawOptions) -> List[Path]:
+    paths = []
 
-    draw_face_top_grid(context, 
+    paths0 = draw_face_top_grid(
         face=face, 
         nx=cube.nx, 
         nz=cube.nz, 
@@ -25,8 +23,9 @@ def draw_cube(context, face: Face, cube: Cube, options: FaceDrawOptions):
         y_top_left_start=cube.y_top_left_start,
         options=options
         )
+    paths += paths0
 
-    draw_face_left_grid(context,
+    paths0 = draw_face_left_grid(
         face=face,
         ny=cube.ny, 
         nz=cube.nz, 
@@ -34,8 +33,9 @@ def draw_cube(context, face: Face, cube: Cube, options: FaceDrawOptions):
         y_top_left_start=cube.y_top_left_start,
         options=options
         )
+    paths += paths0
 
-    draw_face_front_grid(context, 
+    paths0 = draw_face_front_grid( 
         face=face, 
         nx=cube.nx, 
         ny=cube.ny, 
@@ -43,3 +43,6 @@ def draw_cube(context, face: Face, cube: Cube, options: FaceDrawOptions):
         y_top_left_start=cube.y_top_left_start + cube.nz*face.y_translate,
         options=options
         )
+    paths += paths0
+
+    return paths

@@ -1,12 +1,9 @@
-import cairo
-import numpy as np
 from dataclasses import dataclass
-from typing import Tuple, Dict
+from typing import List
 
-from enum import Enum
-
-from face_grid import *
-from cube import *
+from .face_grid import *
+from .cube import *
+from .path import *
 
 @dataclass
 class Selection:
@@ -14,7 +11,13 @@ class Selection:
     z_idx: int
     sel_size: int
 
-def draw_cube_and_selection_interior(context, face: Face, cube: Cube, sel: Selection, options_grid: FaceDrawOptions, options_sel: FaceDrawOptions):
+def draw_cube_and_selection_interior(
+    face: Face, 
+    cube: Cube,
+    sel: Selection, 
+    options_grid: FaceDrawOptions, 
+    options_sel: FaceDrawOptions
+    ) -> List[Path]:
 
     face_sel = Face(
         x_translate=sel.sel_size * face.x_translate,
@@ -30,26 +33,37 @@ def draw_cube_and_selection_interior(context, face: Face, cube: Cube, sel: Selec
         y_top_left_start=cube.y_top_left_start + sel.z_idx * face.y_translate + sel.y_idx * face.box_dim
         )
 
-    draw_cube(context, 
+    paths = []
+
+    paths0 = draw_cube( 
         face=face_sel,
         cube=cube_sel,
         options=options_sel
         )
+    paths += paths0
 
-    draw_cube(context,
+    paths0 = draw_cube(
         face=face,
         cube=cube,
         options=options_grid
         )
+    paths += paths0
 
-def draw_cube_and_selection_top(context, face: Face, cube: Cube, sel: Selection, 
+    return paths
+
+def draw_cube_and_selection_top(
+    face: Face, 
+    cube: Cube, 
+    sel: Selection, 
     options_grid: FaceDrawOptions,
     options_sel: FaceDrawOptions
-    ):
+    ) -> List[Path]:
+
+    paths = []
 
     # Draw back-left grid part
     if sel.sel_size + sel.z_idx > 0:
-        draw_face_left_grid(context,
+        paths0 = draw_face_left_grid(
             face=face,
             ny=cube.ny, 
             nz=sel.z_idx+sel.sel_size, 
@@ -57,8 +71,9 @@ def draw_cube_and_selection_top(context, face: Face, cube: Cube, sel: Selection,
             y_top_left_start=cube.y_top_left_start,
             options=options_grid
             )
+        paths += paths0
 
-        draw_face_top_grid(context, 
+        paths0 = draw_face_top_grid( 
             face=face,
             nx=cube.nx, 
             nz=sel.z_idx+sel.sel_size, 
@@ -66,6 +81,7 @@ def draw_cube_and_selection_top(context, face: Face, cube: Cube, sel: Selection,
             y_top_left_start=cube.y_top_left_start,
             options=options_grid
             )
+        paths += paths0
 
     # Draw selection
     cube_sel = Cube(
@@ -75,11 +91,12 @@ def draw_cube_and_selection_top(context, face: Face, cube: Cube, sel: Selection,
         x_top_left_start=cube.x_top_left_start + sel.z_idx*face.x_translate, 
         y_top_left_start=cube.y_top_left_start + sel.z_idx*face.y_translate + sel.y_idx*face.box_dim
         )
-    draw_cube(context, 
+    paths0 = draw_cube( 
         face=face, 
         cube=cube_sel,
         options=options_sel
         )
+    paths += paths0
 
     # Draw front grid part
     cube_front = Cube(
@@ -89,22 +106,31 @@ def draw_cube_and_selection_top(context, face: Face, cube: Cube, sel: Selection,
         x_top_left_start=cube.x_top_left_start + max((sel.z_idx + sel.sel_size),0) * face.x_translate, 
         y_top_left_start=cube.y_top_left_start + max((sel.z_idx + sel.sel_size),0) * face.y_translate
         )
-    draw_cube(context, 
+    paths0 = draw_cube( 
         face=face,
         cube=cube_front,
         options=options_grid
         )
+    paths += paths0
 
-def draw_cube_and_selection_top_and_front(context, face: Face, cube: Cube, sel: Selection,
+    return paths
+
+def draw_cube_and_selection_top_and_front(
+    face: Face, 
+    cube: Cube, 
+    sel: Selection,
     options_grid: FaceDrawOptions,
     options_sel: FaceDrawOptions
-    ):
+    ) -> List[Path]:
 
-    draw_cube(context, 
+    paths = []
+
+    paths0 = draw_cube( 
         face=face,
         cube=cube,
         options=options_grid
         )
+    paths += paths0
 
     cube_sel = Cube(
         nx=cube.nx,
@@ -113,23 +139,31 @@ def draw_cube_and_selection_top_and_front(context, face: Face, cube: Cube, sel: 
         x_top_left_start=cube.x_top_left_start + sel.z_idx*face.x_translate, 
         y_top_left_start=cube.y_top_left_start + sel.z_idx*face.y_translate + sel.y_idx*face.box_dim
         )
-    draw_cube(context, 
+    paths0 = draw_cube( 
         face=face, 
         cube=cube_sel,
         options=options_sel
         )
+    paths += paths0
 
-def draw_cube_and_selection_front(context, face: Face, cube: Cube, sel: Selection,
+    return paths
+
+def draw_cube_and_selection_front(
+    face: Face, 
+    cube: Cube, 
+    sel: Selection,
     options_grid: FaceDrawOptions,
     options_sel: FaceDrawOptions
-    ):
+    ) -> List[Path]:
+
+    paths = []
 
     # Draw bottom grid part
     if cube.ny - sel.y_idx > 0:
         bottom_x_top_left_start = cube.x_top_left_start
         bottom_y_top_left_start = cube.y_top_left_start + max(sel.y_idx,0) * face.box_dim
 
-        draw_face_left_grid(context,
+        paths0 = draw_face_left_grid(
             face=face,
             ny=cube.ny-sel.y_idx, 
             nz=cube.nz, 
@@ -137,8 +171,9 @@ def draw_cube_and_selection_front(context, face: Face, cube: Cube, sel: Selectio
             y_top_left_start=bottom_y_top_left_start,
             options=options_grid
             )
+        paths += paths0
 
-        draw_face_front_grid(context, 
+        paths0 = draw_face_front_grid( 
             face=face, 
             nx=cube.nx, 
             ny=cube.ny-sel.y_idx, 
@@ -146,6 +181,7 @@ def draw_cube_and_selection_front(context, face: Face, cube: Cube, sel: Selectio
             y_top_left_start=bottom_y_top_left_start + cube.nz * face.y_translate,
             options=options_grid
             )
+        paths += paths0
 
     # Draw selection
     cube_sel = Cube(
@@ -155,11 +191,12 @@ def draw_cube_and_selection_front(context, face: Face, cube: Cube, sel: Selectio
         x_top_left_start=cube.x_top_left_start + sel.z_idx*face.x_translate, 
         y_top_left_start=cube.y_top_left_start + sel.z_idx*face.y_translate + sel.y_idx*face.box_dim
         )
-    draw_cube(context, 
+    paths0 = draw_cube( 
         face=face,
         cube=cube_sel,
         options=options_sel
         )
+    paths += paths0
 
     # Draw top grid part
     cube_top = Cube(
@@ -169,25 +206,30 @@ def draw_cube_and_selection_front(context, face: Face, cube: Cube, sel: Selectio
         x_top_left_start=cube.x_top_left_start, 
         y_top_left_start=cube.y_top_left_start
         )
-    draw_cube(context, 
+    paths0 = draw_cube( 
         face=face, 
         cube=cube_top,
         options=options_grid
         )
+    paths += paths0
 
-def draw_cube_and_selection(context, 
+    return paths
+
+def draw_cube_and_selection( 
     face: Face, 
     cube: Cube, 
     sel: Selection,
     options_grid: FaceDrawOptions,
     options_sel: FaceDrawOptions
-    ):
+    ) -> List[Path]:
+    paths = []
+
     if sel.z_idx + sel.sel_size >= cube.nz:
         # Front
         if sel.y_idx <= 0:
             # Front and top
             print("front and top")
-            draw_cube_and_selection_top_and_front(context, 
+            return draw_cube_and_selection_top_and_front( 
                 face=face, 
                 cube=cube, 
                 sel=sel,
@@ -197,7 +239,7 @@ def draw_cube_and_selection(context,
         else:
             # Just front
             print("front")
-            draw_cube_and_selection_front(context,
+            return draw_cube_and_selection_front(
                 face=face, 
                 cube=cube, 
                 sel=sel,
@@ -207,7 +249,7 @@ def draw_cube_and_selection(context,
     elif sel.y_idx < 0:
         # Just top
         print("top")
-        draw_cube_and_selection_top(context,
+        return draw_cube_and_selection_top(
             face=face, 
             cube=cube, 
             sel=sel,
@@ -217,7 +259,7 @@ def draw_cube_and_selection(context,
     else:
         # Interior
         print("interior")
-        draw_cube_and_selection_interior(context,
+        return draw_cube_and_selection_interior(
             face=face, 
             cube=cube, 
             sel=sel,
