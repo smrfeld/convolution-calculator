@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 
 def p_str(val: float) -> str:
     return str(max(min(int(100*val),100),0)) + "%"
@@ -13,9 +13,11 @@ class Path:
     line_col : Tuple[float,float,float,float]
     fill_col : Tuple[float,float,float,float]
 
-    def svg_str(self) -> str:
-        s = ''
-        s += '<path style="'
+    def svg_style_str(self) -> str:
+        s = ""
+
+        if self.fill or self.stroke:
+            s += 'style="'
 
         if self.fill:
             s += 'fill-rule:nonzero;'
@@ -25,8 +27,6 @@ class Path:
                 p_str(self.fill_col[2])
                 )
             s += 'fill-opacity:%d;' % self.fill_col[3]
-        else:
-            s += 'fill:none;'
 
         if self.stroke:
             s += 'stroke-width:%f;' % self.line_width
@@ -41,9 +41,17 @@ class Path:
             s += 'stroke-opacity:%f;' % self.line_col[3]
             
             s += 'stroke-miterlimit:10;'
-        else:
-            s += 'stroke:none;'
-        s += '"'
+        
+        if self.fill or self.stroke:
+            s += '"'
+        
+        return s
+
+    def svg_str(self, id0: str) -> str:
+        s = ''
+        s += '<path id="%s" ' % id0
+
+        s += self.svg_style_str()
 
         if len(self.pts) > 0:
             s += ' d="'
@@ -57,3 +65,11 @@ class Path:
         s += '/>'
 
         return s
+
+class Paths:
+    entries: Dict[str,List[Path]] = {}
+
+    def add_path(self, key: str, path: Path):
+        if not key in self.entries:
+            self.entries[key] = []
+        self.entries[key].append(path)

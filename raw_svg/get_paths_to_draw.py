@@ -6,18 +6,39 @@ from .cube import *
 from .path import *
 
 @dataclass
-class Selection:
-    y_idx: int
-    z_idx: int
+class SelectionGoal:
+    y_idx_top_left: int
+    z_idx_top_left: int
     sel_size: int
 
-def draw_cube_and_selection_interior(
-    face: Face, 
-    cube: Cube,
-    sel: Selection, 
-    options_grid: FaceDrawOptions, 
-    options_sel: FaceDrawOptions
-    ) -> Dict[str,List[Path]]:
+@dataclass
+class Selection0:
+    ids : List[str] = []
+
+    def add_id(self, id0: str):
+        if not id0 in self.ids:
+            self.ids.append(id0)
+
+    # def add_selection(self, goal: SelectionGoal, cube_show: CubeShow):
+        
+
+@dataclass
+class CubeShow:
+    nx: int
+    ny: int
+    nz: int
+    y_idx_top_left: int
+    z_idx_top_left: int
+
+def get_paths_to_draw_interior(
+    cube_show: CubeShow,
+    sel_goal: SelectionGoal,
+    sel0: Selection0
+    ):
+
+    # Selection first
+    for ix in range(0,cube_show.nx):
+        for iy in range(0,cube_show.nx):
 
     face_sel = Face(
         x_translate=sel.sel_size * face.x_translate,
@@ -33,12 +54,12 @@ def draw_cube_and_selection_interior(
         y_top_left_start=cube.y_top_left_start + sel.z_idx * face.y_translate + sel.y_idx * face.box_dim
         )
 
-    ids_to_paths = {'sel': [], 'cube': []}
 
-    ids_to_paths['sel'] += draw_cube( 
+    draw_cube( 
         face=face_sel,
         cube=cube_sel,
-        options=options_sel
+        options=options_sel,
+        paths=paths
         )
 
     ids_to_paths['cube'] += draw_cube(
