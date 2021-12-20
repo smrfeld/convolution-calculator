@@ -41,7 +41,7 @@ paths = draw_cube(
     )
 print(paths.entries.keys())
 
-idxs = "000_003_004"
+idxs = "000_003_000"
 paths.entries["sel_front_%s" % idxs].fill_col = (0,0,1,1)
 paths.entries["sel_top_%s" % idxs].fill_col = (0,0,1,1)
 paths.entries["sel_left_%s" % idxs].fill_col = (0,0,1,1)

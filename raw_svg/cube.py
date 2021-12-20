@@ -64,7 +64,7 @@ def draw_cube_sel(face: Face, cube: Cube, options_sel: FaceDrawOptions, paths: P
             face=face,
             ny=cube.ny_in + cube.ny_out, 
             nz=cube.nz_in + cube.nz_out, 
-            w_top_left_start=cube.w_top_left_start, 
+            w_top_left_start=cube.w_top_left_start + ix*face.box_dim,
             h_top_left_start=cube.h_top_left_start,
             options=options_sel,
             paths=paths,
