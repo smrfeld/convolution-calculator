@@ -14,9 +14,7 @@ class Cube:
     w_top_left_start: int
     h_top_left_start: int
 
-def draw_cube(face: Face, cube: Cube, options_grid: FaceDrawOptions, options_sel: FaceDrawOptions) -> Paths:
-    paths = Paths()
-
+def draw_cube_grid(face: Face, cube: Cube, options_grid: FaceDrawOptions, paths: Paths):
     iy_start = cube.ny_out
     iz_start = cube.nz_out
     w_top_left_start_in = cube.w_top_left_start + iz_start*face.w_translate
@@ -57,9 +55,10 @@ def draw_cube(face: Face, cube: Cube, options_grid: FaceDrawOptions, options_sel
         key_pre='grid',
         key_iz=None
         )
+    
+def draw_cube_sel(face: Face, cube: Cube, options_sel: FaceDrawOptions, paths: Paths):
 
     # Draw all possible selections
-    '''
     for ix in range(0,cube.nx):
         draw_face_left_grid(
             face=face,
@@ -91,13 +90,16 @@ def draw_cube(face: Face, cube: Cube, options_grid: FaceDrawOptions, options_sel
             face=face, 
             nx=cube.nx, 
             ny=cube.ny_in + cube.ny_out, 
-            w_top_left_start=cube.w_top_left_start + (cube.nz_in + cube.nz_out) * face.x_translate, 
-            h_top_left_start=cube.h_top_left_start + (cube.nz_in + cube.nz_out) * face.y_translate,
+            w_top_left_start=cube.w_top_left_start + (cube.nz_in + cube.nz_out) * face.w_translate, 
+            h_top_left_start=cube.h_top_left_start + (cube.nz_in + cube.nz_out) * face.h_translate,
             options=options_sel,
             paths=paths,
             key_pre='sel',
             key_iz=iz
             )
-    '''
 
+def draw_cube(face: Face, cube: Cube, options_grid: FaceDrawOptions, options_sel: FaceDrawOptions) -> Paths:
+    paths = Paths()
+    draw_cube_grid(face, cube, options_grid, paths)
+    draw_cube_sel(face, cube, options_sel, paths)
     return paths
