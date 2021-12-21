@@ -14,7 +14,7 @@ class Cube:
     w_top_left_start: int
     h_top_left_start: int
 
-def draw_cube_grid(face: Face, cube: Cube, options_grid: FaceDrawOptions, paths: Paths):
+def draw_cube_grid(face: Face, cube: Cube, options_grid: FaceDrawOptions, paths: Paths, key_pre : str = 'grid'):
     iy_start = cube.ny_out
     iz_start = cube.nz_out
     w_top_left_start_in = cube.w_top_left_start + iz_start*face.w_translate
@@ -28,7 +28,7 @@ def draw_cube_grid(face: Face, cube: Cube, options_grid: FaceDrawOptions, paths:
         h_top_left_start=h_top_left_start_in,
         options=options_grid,
         paths=paths,
-        key_pre='grid',
+        key_pre=key_pre,
         key_iy=None
         )
 
@@ -40,7 +40,7 @@ def draw_cube_grid(face: Face, cube: Cube, options_grid: FaceDrawOptions, paths:
         h_top_left_start=h_top_left_start_in,
         options=options_grid,
         paths=paths,
-        key_pre='grid',
+        key_pre=key_pre,
         key_ix=None
         )
 
@@ -52,7 +52,7 @@ def draw_cube_grid(face: Face, cube: Cube, options_grid: FaceDrawOptions, paths:
         h_top_left_start=h_top_left_start_in + cube.nz_in * face.h_translate,
         options=options_grid,
         paths=paths,
-        key_pre='grid',
+        key_pre=key_pre,
         key_iz=None
         )
     
@@ -62,8 +62,8 @@ def draw_cube_sel(face: Face, cube: Cube, options_sel: FaceDrawOptions, paths: P
     for ix in range(0,cube.nx):
         draw_face_left_grid(
             face=face,
-            ny=cube.ny_in + cube.ny_out, 
-            nz=cube.nz_in + cube.nz_out, 
+            ny=cube.ny_in + 2*cube.ny_out, 
+            nz=cube.nz_in + 2*cube.nz_out, 
             w_top_left_start=cube.w_top_left_start + ix*face.box_dim,
             h_top_left_start=cube.h_top_left_start,
             options=options_sel,
@@ -72,11 +72,11 @@ def draw_cube_sel(face: Face, cube: Cube, options_sel: FaceDrawOptions, paths: P
             key_ix=ix
             )
 
-    for iy in range(0,cube.ny_in+cube.ny_out):
+    for iy in range(0,cube.ny_in+2*cube.ny_out):
         draw_face_top_grid(
             face=face,
             nx=cube.nx, 
-            nz=cube.nz_in + cube.nz_out,
+            nz=cube.nz_in + 2*cube.nz_out,
             w_top_left_start=cube.w_top_left_start, 
             h_top_left_start=cube.h_top_left_start + iy*face.box_dim,
             options=options_sel,
@@ -85,13 +85,13 @@ def draw_cube_sel(face: Face, cube: Cube, options_sel: FaceDrawOptions, paths: P
             key_iy=iy
             )
 
-    for iz in range(0,cube.nz_in+cube.nz_out):
+    for iz in range(0,cube.nz_in+2*cube.nz_out):
         draw_face_front_grid( 
             face=face, 
             nx=cube.nx, 
-            ny=cube.ny_in + cube.ny_out, 
-            w_top_left_start=cube.w_top_left_start + (cube.nz_out + iz + 1) * face.w_translate, 
-            h_top_left_start=cube.h_top_left_start + (cube.nz_out + iz + 1) * face.h_translate,
+            ny=cube.ny_in + 2*cube.ny_out, 
+            w_top_left_start=cube.w_top_left_start + (1+iz) * face.w_translate, 
+            h_top_left_start=cube.h_top_left_start + (1+iz) * face.h_translate,
             options=options_sel,
             paths=paths,
             key_pre='sel',
