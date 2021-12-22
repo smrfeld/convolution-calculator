@@ -19,9 +19,9 @@ class Path {
         s += '<path id="' + this.idStr + '"';
 
         if (this.isGrid) {
-            s += ' style="fill-rule:nonzero;fill:rgb(0%,0%,0%);fill-opacity:0;stroke-width:0.100000;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:1.000000;stroke-miterlimit:10;"';
+            s += ' style="fill-rule:nonzero;fill:rgb(0%,0%,0%);fill-opacity:0;stroke-width:0.2;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;"';
         } else {
-            s += ' style="fill-opacity:0"';
+            s += ' style="fill-opacity:0;fill:rgb(0%,0%,100%);stroke-width:0.1;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:0;stroke-miterlimit:10;"';
         }
 
         if (this.pts.length > 0) {
@@ -53,6 +53,19 @@ class Face {
         this.box_dim = box_dim;
     }
 }
+
+let nx = 3;
+let ny = 5;
+let nz = 5;
+
+let ny_pad = 2;
+let nz_pad = 2;
+
+let face = new Face(30, 20, 50);
+let w_top_left_canvas = 100;
+let h_top_left_canvas = 100;
+
+let filter_size = 3;
 
 function drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid) {
     let w_top_left = w_top_left_canvas + ix*face.box_dim + iz*face.w_translate;
@@ -126,67 +139,62 @@ function loadSVG() {
 function svgUnselectAll() {
     selected.forEach(function(item, index, array) {
         $(item).css("fill-opacity","0");
+        $(item).css("stroke-opacity","0");
     })
 
     selected = [];
 }
 
-function svgSelect(ix, iy, iz) {
-    var s = '#sel_left_' + String(ix).padStart(3, '0') + '_' + String(iy).padStart(3, '0') + '_' + String(iz).padStart(3, '0');
-    $(s).css("fill-opacity","1");
-    selected.push(s);
-
-    s = '#sel_top_' + String(ix).padStart(3, '0') + '_' + String(iy).padStart(3, '0') + '_' + String(iz).padStart(3, '0');
-    $(s).css("fill-opacity","1");
-    selected.push(s);
-
-    s = '#sel_front_' + String(ix).padStart(3, '0') + '_' + String(iy).padStart(3, '0') + '_' + String(iz).padStart(3, '0');
-    $(s).css("fill-opacity","1");
-    selected.push(s);
+function svgSelect(ix, iy, iz, loc) {
+    var idStr = '#' + getIdStr(ix,iy,iz,loc,'sel');
+    $(idStr).css("fill-opacity","0.25");
+    $(idStr).css("stroke-opacity","1");
+    selected.push(idStr);
 }
 
 function svgAnimateStart() {
     svgUnselectAll();
 
-    let ny_in = 6;
-    let nz_in = 6;
-    let nx = 3;
-
-    let filter_size = 3;
-
     // Next in z direction
     pos_iz += 1;
 
-    // Check
-    if (pos_iz >= nz_in) {
+    // Check in bounds
+    if (pos_iz > nz + 2*nz_pad - filter_size) {
         // Next in y direction
         pos_iy += 1;
         pos_iz = 0;
     }
-    if (pos_iy >= ny_in) {
+    if (pos_iy > ny + 2*ny_pad - filter_size) {
         // Reset
         pos_iy = 0;
         pos_iz = 0;
     }
 
     // Select all filters
+
+    // Top
+    let iy_top = pos_iy;
     for (let ix = 0; ix < nx; ix++) { 
-        for (let iy = pos_iy; iy < (pos_iy+filter_size); iy++) {
-            for (let iz = pos_iz; iz < (pos_iz+filter_size); iz++) {
-                svgSelect(ix, iy, iz);
-            }
+        for (let iz = pos_iz; iz < (pos_iz+filter_size); iz++) {
+            svgSelect(ix, iy_top, iz, 'top');
         }
     }
-    
-    /*
-    let ny_in = 6;
-    let nz_in = 6;
 
-    let s = '#sel_left_001_002_001';
-    console.log(s);
-    // $(s).css("fill","rgb(100%,0%,0%)");
-    $(s).css("fill-opacity","1");
-    */
+    // Left
+    let ix_left = 0;
+    for (let iy = pos_iy; iy < (pos_iy+filter_size); iy++) {
+        for (let iz = pos_iz; iz < (pos_iz+filter_size); iz++) {
+            svgSelect(ix_left, iy, iz, 'left');
+        }
+    }
+
+    // Front
+    let iz_front = pos_iz + filter_size - 1;
+    for (let ix = 0; ix < nx; ix++) { 
+        for (let iy = pos_iy; iy < (pos_iy+filter_size); iy++) {
+            svgSelect(ix, iy, iz_front, 'front');
+        }
+    }
 
     timeoutID = setTimeout(svgAnimateStart, 200);
 }
@@ -195,9 +203,9 @@ function svgAnimateStop() {
     clearTimeout(timeoutID);
 }
 
-function svgCreateStr(paths) {
+function svgCreateStr(width, height, paths) {
     var svgStr = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n';
-    svgStr += '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" viewBox="0 0 959 593">\n';
+    svgStr += '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" viewBox="0 0 ' + String(width) + ' ' + String(height) + '">\n';
     
     paths.forEach(function(item, index, array) {
         svgStr += item.svgStr() + '\n';
@@ -208,8 +216,8 @@ function svgCreateStr(paths) {
     return svgStr;
 }
 
-function getIdStr(ix, iy, iz) {
-    return String(ix).padStart(3, '0') + '_' + String(iy).padStart(3, '0') + '_' + String(iz).padStart(3, '0');
+function getIdStr(ix, iy, iz, loc, obj) {
+    return String(ix).padStart(3, '0') + '_' + String(iy).padStart(3, '0') + '_' + String(iz).padStart(3, '0') + '_' + loc + '_' + obj;
 }
 
 function svgDrawGrid(nx, ny, nz, ny_pad, nz_pad, face, w_top_left_canvas, h_top_left_canvas) {
@@ -221,7 +229,7 @@ function svgDrawGrid(nx, ny, nz, ny_pad, nz_pad, face, w_top_left_canvas, h_top_
     let iy_level = ny_pad;
     for (let ix = 0; ix < nx; ix++) { 
         for (let iz = nz_pad; iz < nz+nz_pad; iz++) {
-            idStr = getIdStr(ix,iy_level,iz) + "_top_grid";
+            idStr = getIdStr(ix,iy_level,iz,'top','grid');
             paths.push(drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy_level, iz, face, isGrid));
         }
     }
@@ -230,7 +238,7 @@ function svgDrawGrid(nx, ny, nz, ny_pad, nz_pad, face, w_top_left_canvas, h_top_
     let ix_level = 0;
     for (let iy = ny_pad; iy < ny+ny_pad; iy++) { 
         for (let iz = nz_pad; iz < nz+nz_pad; iz++) {
-            idStr = getIdStr(ix_level,iy,iz) + "_left_grid";
+            idStr = getIdStr(ix_level,iy,iz,'left','grid');
             paths.push(drawFaceLeft(idStr, w_top_left_canvas, h_top_left_canvas, ix_level, iy, iz, face, isGrid));
         }
     }
@@ -239,7 +247,7 @@ function svgDrawGrid(nx, ny, nz, ny_pad, nz_pad, face, w_top_left_canvas, h_top_
     let iz_level = nz_pad + nz - 1;
     for (let ix = 0; ix < nx; ix++) { 
         for (let iy = ny_pad; iy < ny+ny_pad; iy++) { 
-            idStr = getIdStr(ix,iy,iz_level) + "_front_grid";
+            idStr = getIdStr(ix,iy,iz_level,'front','grid');
             paths.push(drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz_level, face, isGrid));
         }
     }
@@ -255,13 +263,13 @@ function svgDrawSel(nx, ny, nz, ny_pad, nz_pad, face, w_top_left_canvas, h_top_l
     for (let ix = 0; ix < nx; ix++) { 
         for (let iy = 0; iy < ny+2*ny_pad; iy++) { 
             for (let iz = 0; iz < nz+2*nz_pad; iz++) {
-                idStr = getIdStr(ix,iy,iz) + "_top_sel";
+                idStr = getIdStr(ix,iy,iz,'top','sel');
                 paths.push(drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid));
                 
-                idStr = getIdStr(ix,iy,iz) + "_left_sel";
+                idStr = getIdStr(ix,iy,iz,'left','sel');
                 paths.push(drawFaceLeft(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid));
                 
-                idStr = getIdStr(ix,iy,iz) + "_front_sel";
+                idStr = getIdStr(ix,iy,iz,'front','sel');
                 paths.push(drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid));
             }
         }
@@ -271,31 +279,12 @@ function svgDrawSel(nx, ny, nz, ny_pad, nz_pad, face, w_top_left_canvas, h_top_l
 }
 
 function svgDraw() {
-    /*
-    let path = new Path("abc123");
-    path.pts.push([0,0]);
-    path.pts.push([100,100]);
-
-    let s = path.svgStr();
-    console.log(s);
-    */
-
-    let nx = 3;
-    let ny = 5;
-    let nz = 5;
-
-    let ny_pad = 2;
-    let nz_pad = 2;
-
-    let face = new Face(30, 20, 50);
-    let w_top_left_canvas = 100;
-    let h_top_left_canvas = 100;
 
     let pathsGrid = svgDrawGrid(nx, ny, nz, ny_pad, nz_pad, face, w_top_left_canvas, h_top_left_canvas);
     let pathsSel = svgDrawSel(nx, ny, nz, ny_pad, nz_pad, face, w_top_left_canvas, h_top_left_canvas);
     let paths = pathsSel.concat(pathsGrid);
 
     // Draw
-    let svgStr = svgCreateStr(paths);
+    let svgStr = svgCreateStr(1000,800,paths);
     $('#ccSVG').html(svgStr);
 }
