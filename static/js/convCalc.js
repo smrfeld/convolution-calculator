@@ -1,11 +1,6 @@
 var x = 0;
 var timeoutID = "";
 
-var ixSelOut = 0;
-var iySelOut = 0;
-var izSelOut = 0;
-var selected = [];
-
 class Path {
     constructor(idStr, pts, isGrid) {
         this.idStr = idStr;
@@ -59,8 +54,7 @@ let nx = 3;
 let ny = 9;
 let nz = 9;
 
-let ny_pad = 0;
-let nz_pad = 0;
+let n_pad_end = 1;
 
 let face = new Face(30, 20, 50);
 let w_top_left_canvas = 100;
@@ -68,8 +62,13 @@ let h_top_left_canvas = 100;
 
 let padding = 0;
 let nFilters = 2;
-let filter_size = 3;
+let filter_size = 4;
 let stride = 2;
+
+var ixSelOut = 0;
+var iySelOut = 0;
+var izSelOut = -1;
+var selected = [];
 
 function drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid) {
     let w_top_left = w_top_left_canvas + ix*face.box_dim + iz*face.w_translate;
@@ -140,8 +139,8 @@ function svgAnimateLoop() {
     svgUnselectAll();
 
     // Output dimensions
-    let nzOut = (nz - filter_size + 2*padding)/stride + 1;
-    let nyOut = (ny - filter_size + 2*padding)/stride + 1;
+    let nzOut = Math.ceil((nz - filter_size + 2*padding)/stride + 1);
+    let nyOut = Math.ceil((ny - filter_size + 2*padding)/stride + 1);
     let nxOut = nFilters;
 
     // Next in z direction
@@ -170,9 +169,7 @@ function svgAnimateLoop() {
     iySelIn = stride * iySelOut;
     izSelIn = stride * izSelOut;
 
-    // Select all filters
-
-    // Top
+    // Input top
     let iy_top = iySelIn;
     for (let ix = 0; ix < nx; ix++) { 
         for (let iz = izSelIn; iz < (izSelIn+filter_size); iz++) {
@@ -180,7 +177,7 @@ function svgAnimateLoop() {
         }
     }
 
-    // Left
+    // Input left
     let ix_left = 0;
     for (let iy = iySelIn; iy < (iySelIn+filter_size); iy++) {
         for (let iz = izSelIn; iz < (izSelIn+filter_size); iz++) {
@@ -188,7 +185,7 @@ function svgAnimateLoop() {
         }
     }
 
-    // Front
+    // Input front
     let iz_front = izSelIn + filter_size - 1;
     for (let ix = 0; ix < nx; ix++) { 
         for (let iy = iySelIn; iy < (iySelIn+filter_size); iy++) {
@@ -226,15 +223,15 @@ function getIdStr(ix, iy, iz, loc, obj, inOut) {
     return String(ix).padStart(3, '0') + '_' + String(iy).padStart(3, '0') + '_' + String(iz).padStart(3, '0') + '_' + inOut + '_' + loc + '_' + obj;
 }
 
-function svgDrawGrid(nx, ny, nz, ny_pad, nz_pad, face, w_top_left_canvas, h_top_left_canvas, inOut) {
+function svgDrawGrid(nx, ny, nz, face, w_top_left_canvas, h_top_left_canvas, inOut) {
     var paths = [];
     let isGrid = true;
     var idStr = "";
 
     // Top
-    let iy_level = ny_pad;
+    let iy_level = 0;
     for (let ix = 0; ix < nx; ix++) { 
-        for (let iz = nz_pad; iz < nz+nz_pad; iz++) {
+        for (let iz = 0; iz < nz; iz++) {
             idStr = getIdStr(ix,iy_level,iz,'top','grid',inOut);
             paths.push(drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy_level, iz, face, isGrid));
         }
@@ -242,17 +239,17 @@ function svgDrawGrid(nx, ny, nz, ny_pad, nz_pad, face, w_top_left_canvas, h_top_
 
     // Left
     let ix_level = 0;
-    for (let iy = ny_pad; iy < ny+ny_pad; iy++) { 
-        for (let iz = nz_pad; iz < nz+nz_pad; iz++) {
+    for (let iy = 0; iy < ny; iy++) { 
+        for (let iz = 0; iz < nz; iz++) {
             idStr = getIdStr(ix_level,iy,iz,'left','grid',inOut);
             paths.push(drawFaceLeft(idStr, w_top_left_canvas, h_top_left_canvas, ix_level, iy, iz, face, isGrid));
         }
     }
 
     // Front
-    let iz_level = nz_pad + nz - 1;
+    let iz_level =  nz - 1;
     for (let ix = 0; ix < nx; ix++) { 
-        for (let iy = ny_pad; iy < ny+ny_pad; iy++) { 
+        for (let iy = 0; iy < ny; iy++) { 
             idStr = getIdStr(ix,iy,iz_level,'front','grid',inOut);
             paths.push(drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz_level, face, isGrid));
         }
@@ -261,14 +258,14 @@ function svgDrawGrid(nx, ny, nz, ny_pad, nz_pad, face, w_top_left_canvas, h_top_
     return paths;
 }
 
-function svgDrawSel(nx, ny, nz, ny_pad, nz_pad, face, w_top_left_canvas, h_top_left_canvas, inOut) {
+function svgDrawSel(nx, ny, nz, n_pad_end, face, w_top_left_canvas, h_top_left_canvas, inOut) {
     var paths = [];
     let isGrid = false;
     var idStr = "";
 
     for (let ix = 0; ix < nx; ix++) { 
-        for (let iy = 0; iy < ny+2*ny_pad; iy++) { 
-            for (let iz = 0; iz < nz+2*nz_pad; iz++) {
+        for (let iy = 0; iy < ny+n_pad_end; iy++) { 
+            for (let iz = 0; iz < nz+n_pad_end; iz++) {
                 idStr = getIdStr(ix,iy,iz,'top','sel',inOut);
                 paths.push(drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid));
                 
@@ -287,21 +284,18 @@ function svgDrawSel(nx, ny, nz, ny_pad, nz_pad, face, w_top_left_canvas, h_top_l
 function svgDraw() {
 
     // Draw input
-    let pathsGrid = svgDrawGrid(nx, ny, nz, ny_pad, nz_pad, face, w_top_left_canvas, h_top_left_canvas, 'in');
-    let pathsSel = svgDrawSel(nx, ny, nz, ny_pad, nz_pad, face, w_top_left_canvas, h_top_left_canvas, 'in');
+    let pathsGrid = svgDrawGrid(nx, ny, nz, face, w_top_left_canvas, h_top_left_canvas, 'in');
+    let pathsSel = svgDrawSel(nx, ny, nz, n_pad_end, face, w_top_left_canvas, h_top_left_canvas, 'in');
     var paths = pathsSel.concat(pathsGrid);
 
     // Draw output
-    let nzOut = (nz - filter_size + 2*padding)/stride + 1;
-    let nyOut = (ny - filter_size + 2*padding)/stride + 1;
-    console.log('nzOut', nzOut);
-    console.log('nyOut', nyOut);
+    let nzOut = Math.ceil((nz - filter_size + 2*padding)/stride + 1);
+    let nyOut = Math.ceil((ny - filter_size + 2*padding)/stride + 1);
     let nxOut = nFilters;
-    let nyPadOut = 0;
-    let nzPadOut = 0;
+    let nPadEndOut = 0;
 
-    let pathsGridOut = svgDrawGrid(nxOut, nyOut, nzOut, nyPadOut, nzPadOut, face, w_top_left_canvas+500, h_top_left_canvas, 'out');
-    let pathsSelOut = svgDrawSel(nxOut, nyOut, nzOut, nyPadOut, nzPadOut, face, w_top_left_canvas+500, h_top_left_canvas, 'out');
+    let pathsGridOut = svgDrawGrid(nxOut, nyOut, nzOut, face, w_top_left_canvas+500, h_top_left_canvas, 'out');
+    let pathsSelOut = svgDrawSel(nxOut, nyOut, nzOut, nPadEndOut, face, w_top_left_canvas+500, h_top_left_canvas, 'out');
     paths = paths.concat(pathsSelOut);
     paths = paths.concat(pathsGridOut);
 
