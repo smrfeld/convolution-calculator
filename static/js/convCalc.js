@@ -203,6 +203,36 @@ function svgCreateStr(paths) {
     return svgStr;
 }
 
+function svgDrawGrid(nx, ny, nz, ny_pad, nz_pad, face, w_top_left_canvas, h_top_left_canvas) {
+    var paths = [];
+    
+    // Top
+    let iy_level = ny_pad;
+    for (let ix = 0; ix < nx; ix++) { 
+        for (let iz = nz_pad; iz < nz+nz_pad; iz++) {
+            paths.push(drawFaceTop("abc123", w_top_left_canvas, h_top_left_canvas, ix, iy_level, iz, face));
+        }
+    }
+
+    // Left
+    let ix_level = 0;
+    for (let iy = ny_pad; iy < ny+ny_pad; iy++) { 
+        for (let iz = nz_pad; iz < nz+nz_pad; iz++) {
+            paths.push(drawFaceLeft("abc123", w_top_left_canvas, h_top_left_canvas, ix_level, iy, iz, face));
+        }
+    }
+
+    // Front
+    let iz_levels = nz_pad + nz - 1;
+    for (let ix = 0; ix < nx; ix++) { 
+        for (let iy = ny_pad; iy < ny+ny_pad; iy++) { 
+            paths.push(drawFaceFront("abc123", w_top_left_canvas, h_top_left_canvas, ix, iy, iz_levels, face));
+        }
+    }
+
+    return paths;
+}
+
 function svgDraw() {
     /*
     let path = new Path("abc123");
@@ -217,32 +247,14 @@ function svgDraw() {
     let ny = 5;
     let nz = 5;
 
+    let ny_pad = 2;
+    let nz_pad = 2;
+
     let face = new Face(30, 20, 50);
     let w_top_left_canvas = 100;
     let h_top_left_canvas = 100;
 
-    var paths = [];
-    
-    // Top
-    for (let ix = 0; ix < nx; ix++) { 
-        for (let iz = 0; iz < nz; iz++) {
-            paths.push(drawFaceTop("abc123", w_top_left_canvas, h_top_left_canvas, ix, 0, iz, face));
-        }
-    }
-
-    // Left
-    for (let iy = 0; iy < ny; iy++) { 
-        for (let iz = 0; iz < nz; iz++) {
-            paths.push(drawFaceLeft("abc123", w_top_left_canvas, h_top_left_canvas, 0, iy, iz, face));
-        }
-    }
-
-    // Front
-    for (let ix = 0; ix < nx; ix++) { 
-        for (let iy = 0; iy < ny; iy++) { 
-            paths.push(drawFaceFront("abc123", w_top_left_canvas, h_top_left_canvas, ix, iy, nz-1, face));
-        }
-    }
+    let paths = svgDrawGrid(nx, ny, nz, ny_pad, nz_pad, face, w_top_left_canvas, h_top_left_canvas);
 
     // Draw
     let svgStr = svgCreateStr(paths);
