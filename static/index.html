@@ -47,10 +47,16 @@
         </div>
     </nav>
     <div class="container">
-        <input type="button" class="button_pw" value="load" onclick="loadSVG();">
+
+        <script>
+            $(document).ready(function() {
+                // Trigger the draw method on lead
+                svgDraw();
+            });
+        </script>
+
         <input type="button" class="button_pw" value="start" onclick="svgAnimateStart();">
         <input type="button" class="button_pw" value="stop" onclick="svgAnimateStop();">
-        <input type="button" class="button_pw" value="draw" onclick="svgDraw();">
 
         <!--
         <?xml version="1.0" encoding="UTF-8" standalone="no"?>

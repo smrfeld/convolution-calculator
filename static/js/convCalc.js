@@ -15,9 +15,9 @@ class Path {
         s += '<path id="' + this.idStr + '"';
 
         if (this.isGrid) {
-            s += ' style="fill-rule:nonzero;fill:rgb(0%,0%,0%);fill-opacity:0;stroke-width:0.2;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;"';
+            s += ' style="fill-rule:nonzero;fill:rgb(0%,0%,0%);fill-opacity:0.025;stroke-width:0.1;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;"';
         } else {
-            s += ' style="fill-opacity:0;fill:rgb(0%,0%,100%);stroke-width:0.1;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:0;stroke-miterlimit:10;"';
+            s += ' style="fill-opacity:0;fill:rgb(0%,0%,100%);stroke-width:0.2;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:0;stroke-miterlimit:10;"';
         }
 
         if (this.pts.length > 0) {
@@ -121,10 +121,23 @@ function svgUnselectAll() {
     selected = [];
 }
 
-function svgSelect(ix, iy, iz, loc, inOut) {
+function svgSelect(ix, iy, iz, loc, inOut, iFilter, isValid) {
     var idStr = '#' + getIdStr(ix,iy,iz,loc,'sel',inOut);
-    $(idStr).css("fill-opacity","0.25");
+
+    // Turn opacity on
+    $(idStr).css("fill-opacity","0.5");
     $(idStr).css("stroke-opacity","1");
+
+    // Color
+    if (isValid) {
+        let blueVal = 70 + 30*((nFilters-iFilter-1)/(nFilters-1));
+        let col = 'rgb(0%,0%,' + String(blueVal) + '%)';
+        $(idStr).css("fill",col);
+    } else {
+        // If invalid, color = red
+        $(idStr).css("fill","rgb(100%,0%,0%)");
+    }
+
     selected.push(idStr);
 }
 
@@ -164,16 +177,31 @@ function svgAnimateLoop() {
         iySelOut = 0;
         izSelOut = 0;
     }
+    
+    // Filter index
+    let iFilter = ixSelOut;    
 
     // Selection in input
     iySelIn = stride * iySelOut;
     izSelIn = stride * izSelOut;
 
+    // Check if valid
+    if (izSelIn + filter_size > nz) {
+        // Not valid
+        isValid = false;
+    } else if (iySelIn + filter_size > ny) {
+        // Not valid
+        isValid = false;
+    } else {
+        // Valid
+        isValid = true;
+    }
+
     // Input top
     let iy_top = iySelIn;
     for (let ix = 0; ix < nx; ix++) { 
         for (let iz = izSelIn; iz < (izSelIn+filter_size); iz++) {
-            svgSelect(ix, iy_top, iz, 'top', 'in');
+            svgSelect(ix, iy_top, iz, 'top', 'in', iFilter, isValid);
         }
     }
 
@@ -181,7 +209,7 @@ function svgAnimateLoop() {
     let ix_left = 0;
     for (let iy = iySelIn; iy < (iySelIn+filter_size); iy++) {
         for (let iz = izSelIn; iz < (izSelIn+filter_size); iz++) {
-            svgSelect(ix_left, iy, iz, 'left', 'in');
+            svgSelect(ix_left, iy, iz, 'left', 'in', iFilter, isValid);
         }
     }
 
@@ -189,16 +217,16 @@ function svgAnimateLoop() {
     let iz_front = izSelIn + filter_size - 1;
     for (let ix = 0; ix < nx; ix++) { 
         for (let iy = iySelIn; iy < (iySelIn+filter_size); iy++) {
-            svgSelect(ix, iy, iz_front, 'front', 'in');
+            svgSelect(ix, iy, iz_front, 'front', 'in', iFilter, isValid);
         }
     }
 
     // Output side
-    svgSelect(ixSelOut, iySelOut, izSelOut, 'front', 'out');
-    svgSelect(ixSelOut, iySelOut, izSelOut, 'left', 'out');
-    svgSelect(ixSelOut, iySelOut, izSelOut, 'top', 'out');
+    svgSelect(ixSelOut, iySelOut, izSelOut, 'front', 'out', iFilter, isValid);
+    svgSelect(ixSelOut, iySelOut, izSelOut, 'left', 'out', iFilter, isValid);
+    svgSelect(ixSelOut, iySelOut, izSelOut, 'top', 'out', iFilter, isValid);
 
-    timeoutID = setTimeout(svgAnimateLoop, 500);
+    timeoutID = setTimeout(svgAnimateLoop, 100);
 }
 
 function svgAnimateStop() {
