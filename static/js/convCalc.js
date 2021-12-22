@@ -113,33 +113,6 @@ function drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, 
     return new Path(idStr, pts, isGrid);
 }
 
-function startTimer() {
-    x = x + 1;
-    $( "#to_display" ).html( "Next: " + x )
-    /*
-    var password = document.getElementById('password').value;
-    if (password == "123")
-        top.location.href="./file.pdf";
-    else 
-        window.location.reload();
-    */
-
-    /*
-  // get the contents of the link that was clicked
-    var linkText = $(this).text();
-    */
-
-    timeoutID = setTimeout(startTimer, 1000);
-}
-
-function stopTimer() {
-    clearTimeout(timeoutID);
-}
-
-function loadSVG() {
-    $('#ccSVG').load('img/convCalc.svg');
-}
-
 function svgUnselectAll() {
     selected.forEach(function(item, index, array) {
         $(item).css("fill-opacity","0");
