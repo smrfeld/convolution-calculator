@@ -55,11 +55,13 @@ class Face {
 }
 
 let nx = 3;
-let ny = 5;
-let nz = 5;
+let ny = 9;
+let nz = 9;
 
-let ny_pad = 2;
-let nz_pad = 2;
+let ny_pad = 0;
+let nz_pad = 0;
+
+let stride = 2;
 
 let face = new Face(30, 20, 50);
 let w_top_left_canvas = 100;
@@ -156,12 +158,12 @@ function svgAnimateStart() {
     svgUnselectAll();
 
     // Next in z direction
-    pos_iz += 1;
+    pos_iz += stride;
 
     // Check in bounds
     if (pos_iz > nz + 2*nz_pad - filter_size) {
         // Next in y direction
-        pos_iy += 1;
+        pos_iy += stride;
         pos_iz = 0;
     }
     if (pos_iy > ny + 2*ny_pad - filter_size) {
