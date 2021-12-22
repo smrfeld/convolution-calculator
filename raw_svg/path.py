@@ -57,7 +57,7 @@ class Path:
             s += ' d="'
             s += 'M %d %d ' % (self.pts[0][0], self.pts[0][1])
 
-            for ipt in range(0,len(self.pts)):
+            for ipt in range(1,len(self.pts)):
                 s += 'L %d %d ' % (self.pts[ipt][0], self.pts[ipt][1])
 
             s += '"'

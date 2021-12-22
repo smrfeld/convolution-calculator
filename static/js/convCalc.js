@@ -5,6 +5,42 @@ var pos_iy = 0;
 var pos_iz = 0;
 var selected = [];
 
+class Path {
+    constructor(idStr) {
+        this.idStr = idStr;
+        this.pts = [];
+    }
+
+    // Method
+    svgStr() {
+        var s = '';
+
+        s += '<path id="' + this.idStr + '"';
+
+        s += ' style="fill-rule:nonzero;fill:rgb(0%,0%,0%);fill-opacity:0;stroke-width:0.100000;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:1.000000;stroke-miterlimit:10;"';
+
+        if (this.pts.length > 0) {
+            s += ' d="';
+
+            this.pts.forEach(function(item, index, array) {
+                if (index == 0) {
+                    s += 'M ';
+                } else {
+                    s += 'L ';
+                }
+
+                s += item[0] + ' ' + item[1] + ' ';
+            });
+
+            s += '"';
+        }
+
+        s += '/>';
+
+        return s;
+    }
+}
+  
 function startTimer() {
     x = x + 1;
     $( "#to_display" ).html( "Next: " + x )
@@ -102,4 +138,20 @@ function svgAnimateStart() {
 
 function svgAnimateStop() {
     clearTimeout(timeoutID);
+}
+
+function svgDraw() {
+    let path = new Path("abc123");
+    path.pts.push([0,0]);
+    path.pts.push([100,100]);
+
+    let s = path.svgStr();
+    console.log(s);
+
+    var svgStr = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n';
+    svgStr += '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" viewBox="0 0 959 593">\n';
+    svgStr += s + '\n';
+    svgStr += '</svg>';
+    
+    $('#ccSVG').html(svgStr);
 }
