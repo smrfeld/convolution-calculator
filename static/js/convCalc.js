@@ -6,9 +6,9 @@ var pos_iz = 0;
 var selected = [];
 
 class Path {
-    constructor(idStr) {
+    constructor(idStr, pts) {
         this.idStr = idStr;
-        this.pts = [];
+        this.pts = pts;
     }
 
     // Method
@@ -40,7 +40,57 @@ class Path {
         return s;
     }
 }
-  
+
+class Face {
+    constructor(w_translate, h_translate, box_dim) {
+        this.w_translate = w_translate;
+        this.h_translate = h_translate;
+        this.box_dim = box_dim;
+    }
+}
+
+function drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face) {
+    let w_top_left = w_top_left_canvas + ix*face.box_dim + iz*face.w_translate;
+    let h_top_left = h_top_left_canvas + iy*face.box_dim + iz*face.h_translate;
+
+    let pts = [
+        [w_top_left, h_top_left],
+        [w_top_left + face.box_dim, h_top_left],
+        [w_top_left + face.box_dim + face.w_translate, h_top_left + face.h_translate],
+        [w_top_left + face.w_translate, h_top_left + face.h_translate],
+        [w_top_left, h_top_left]
+        ];
+    return new Path(idStr, pts);
+}
+
+function drawFaceLeft(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face) {
+    let w_top_left = w_top_left_canvas + iz*face.w_translate + ix*face.box_dim;
+    let h_top_left = h_top_left_canvas + iz*face.h_translate + iy*face.box_dim;
+
+    let pts = [
+        [w_top_left, h_top_left],
+        [w_top_left + face.w_translate, h_top_left + face.h_translate],
+        [w_top_left + face.w_translate, h_top_left + face.h_translate + face.box_dim],
+        [w_top_left, h_top_left + face.box_dim],
+        [w_top_left, h_top_left]
+        ];
+    return new Path(idStr, pts);
+}
+
+function drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face) {
+    let w_top_left = w_top_left_canvas + ix*face.box_dim + (1+iz) * face.w_translate;
+    let h_top_left = h_top_left_canvas + iy*face.box_dim + (1+iz) * face.h_translate;
+
+    let pts = [
+        [w_top_left, h_top_left],
+        [w_top_left + face.box_dim, h_top_left],
+        [w_top_left + face.box_dim, h_top_left + face.box_dim],
+        [w_top_left, h_top_left + face.box_dim],
+        [w_top_left, h_top_left]
+        ];
+    return new Path(idStr, pts);
+}
+
 function startTimer() {
     x = x + 1;
     $( "#to_display" ).html( "Next: " + x )
@@ -140,18 +190,61 @@ function svgAnimateStop() {
     clearTimeout(timeoutID);
 }
 
+function svgCreateStr(paths) {
+    var svgStr = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n';
+    svgStr += '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" viewBox="0 0 959 593">\n';
+    
+    paths.forEach(function(item, index, array) {
+        svgStr += item.svgStr() + '\n';
+    })
+    
+    svgStr += '</svg>';
+
+    return svgStr;
+}
+
 function svgDraw() {
+    /*
     let path = new Path("abc123");
     path.pts.push([0,0]);
     path.pts.push([100,100]);
 
     let s = path.svgStr();
     console.log(s);
+    */
 
-    var svgStr = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n';
-    svgStr += '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" viewBox="0 0 959 593">\n';
-    svgStr += s + '\n';
-    svgStr += '</svg>';
+    let nx = 3;
+    let ny = 5;
+    let nz = 5;
+
+    let face = new Face(30, 20, 50);
+    let w_top_left_canvas = 100;
+    let h_top_left_canvas = 100;
+
+    var paths = [];
     
+    // Top
+    for (let ix = 0; ix < nx; ix++) { 
+        for (let iz = 0; iz < nz; iz++) {
+            paths.push(drawFaceTop("abc123", w_top_left_canvas, h_top_left_canvas, ix, 0, iz, face));
+        }
+    }
+
+    // Left
+    for (let iy = 0; iy < ny; iy++) { 
+        for (let iz = 0; iz < nz; iz++) {
+            paths.push(drawFaceLeft("abc123", w_top_left_canvas, h_top_left_canvas, 0, iy, iz, face));
+        }
+    }
+
+    // Front
+    for (let ix = 0; ix < nx; ix++) { 
+        for (let iy = 0; iy < ny; iy++) { 
+            paths.push(drawFaceFront("abc123", w_top_left_canvas, h_top_left_canvas, ix, iy, nz-1, face));
+        }
+    }
+
+    // Draw
+    let svgStr = svgCreateStr(paths);
     $('#ccSVG').html(svgStr);
 }
