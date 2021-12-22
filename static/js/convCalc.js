@@ -1,6 +1,7 @@
 var x = 0;
 var timeoutID = "";
 
+var ixSelOut = 0;
 var iySelOut = 0;
 var izSelOut = 0;
 var selected = [];
@@ -180,7 +181,14 @@ function svgAnimateLoop() {
         izSelOut = 0;
     }
     if (iySelOut >= nyOut) {
+        // Next in x direction
+        ixSelOut += 1;
+        iySelOut = 0;
+        izSelOut = 0;
+    }
+    if (ixSelOut >= nxOut) {
         // Reset
+        ixSelOut = 0;
         iySelOut = 0;
         izSelOut = 0;
     }
@@ -216,9 +224,9 @@ function svgAnimateLoop() {
     }
 
     // Output side
-    svgSelect(0, iySelOut, izSelOut, 'front', 'out');
-    svgSelect(0, iySelOut, izSelOut, 'left', 'out');
-    svgSelect(0, iySelOut, izSelOut, 'top', 'out');
+    svgSelect(ixSelOut, iySelOut, izSelOut, 'front', 'out');
+    svgSelect(ixSelOut, iySelOut, izSelOut, 'left', 'out');
+    svgSelect(ixSelOut, iySelOut, izSelOut, 'top', 'out');
 
     timeoutID = setTimeout(svgAnimateLoop, 500);
 }
