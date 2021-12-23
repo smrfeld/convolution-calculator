@@ -165,20 +165,6 @@ function drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, 
     return new Path(idStr, pts, isGrid);
 }
 
-function svgResetSelected() {
-    selected.forEach(function(item, index, array) {
-        $(item).css("fill-opacity","0");
-        $(item).css("stroke-opacity","0");
-    });
-    selected = [];
-
-    gridHidden.forEach(function(item, index, array) {
-        $(item).css("fill-opacity",gridFillOpacity);
-        $(item).css("stroke-opacity","1");
-    });
-    gridHidden = [];
-}
-
 function svgSelect(ix, iy, iz, loc, inOut, iFilter, isValid) {
     var idStr = '#' + getIdStr(ix,iy,iz,loc,'sel',inOut);
 
@@ -202,7 +188,6 @@ function svgGridHide(ix, iy, iz, loc, inOut) {
     $(idStr).css("fill-opacity","0");
     $(idStr).css("stroke-opacity","0");
     
-    console.log("hiding: ", idStr);
     gridHidden.push(idStr);
 }
 
@@ -243,14 +228,47 @@ function svgAnimateLoopIncrement() {
 }
 
 function svgAnimateLoopDraw() {
-    svgResetSelected();
-
-    // Filter index
-    let iFilter = ixSelOut;    
 
     // Selection in input
     iySelIn = stride * iySelOut;
     izSelIn = stride * izSelOut;
+
+    // Correct the order of the grid drawing
+    var idsBottomLayerNew = []
+    // IF the selection is sticking out in the z direction
+    if (izSelIn + filter_size > nz) {
+        // Hide all the grid front elements below
+        for (let ix = 0; ix < nx; ix++) { 
+            for (let iy=iySelIn+filter_size; iy < ny; iy++) {
+                idsBottomLayerNew.push(getIdStr(ix,iy,nz-1,'front','grid','in'));
+            }
+        }
+    }
+    if (idsBottomLayerNew.toString() != idsBottomLayer.toString()) {
+        // Redraw grid to correct order for selection that is sticking out the front
+        console.log("Redrawing grid to correct order for selection that is sticking out the front");
+        console.log('idsBottomLayer',idsBottomLayer);
+        console.log('idsBottomLayerNew',idsBottomLayerNew);
+
+        idsBottomLayer = idsBottomLayerNew;
+        svgDraw();
+    }
+
+    // Undo existing drawing
+    selected.forEach(function(item, index, array) {
+        $(item).css("fill-opacity","0");
+        $(item).css("stroke-opacity","0");
+    });
+    selected = [];
+
+    gridHidden.forEach(function(item, index, array) {
+        $(item).css("fill-opacity",gridFillOpacity);
+        $(item).css("stroke-opacity",gridStrokeOpacity);
+    });
+    gridHidden = [];
+
+    // Filter index
+    let iFilter = ixSelOut;    
 
     // Check if valid
     if (izSelIn + filter_size > nz) {
