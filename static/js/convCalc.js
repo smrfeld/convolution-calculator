@@ -1,6 +1,19 @@
 var x = 0;
 var timeoutID = "";
 
+let gridFillRGB = 'rgb(90%,90%,90%)';
+let gridFillOpacity = '0.8';
+let gridStrokeOpacity = '1';
+
+let selFillOpacity = '1';
+let selStrokeOpacity = '1';
+let selFillInvalidRGB = "rgb(100%,50%,50%)";
+
+function selFillValidRGB(iFilter, nFilters) {
+    let blueVal = 70 + 30*((nFilters-iFilter-1)/(nFilters-1));
+    return 'rgb(50%,50%,' + String(blueVal) + '%)';
+}
+
 class Path {
     constructor(idStr, pts, isGrid) {
         this.idStr = idStr;
@@ -15,7 +28,7 @@ class Path {
         s += '<path id="' + this.idStr + '"';
 
         if (this.isGrid) {
-            s += ' style="fill-rule:nonzero;fill:rgb(90%,90%,90%);fill-opacity:0.8;stroke-width:0.1;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;"';
+            s += ' style="fill-rule:nonzero;fill:'+gridFillRGB+';fill-opacity:'+gridFillOpacity+';stroke-width:0.1;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:'+gridStrokeOpacity+';stroke-miterlimit:10;"';
         } else {
             s += ' style="fill-opacity:0;fill:rgb(0%,0%,100%);stroke-width:0.2;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:0;stroke-miterlimit:10;"';
         }
@@ -68,7 +81,9 @@ let stride = 2;
 var ixSelOut = 0;
 var iySelOut = 0;
 var izSelOut = -1;
+
 var selected = [];
+var gridHidden = [];
 
 function nFiltersAdd() {
     svgAnimateStop();
@@ -77,9 +92,7 @@ function nFiltersAdd() {
     $('#ccnFilters').html(String(nFilters));
 
     // Draw & animate
-    svgDraw();
-    svgAnimateReset();
-    svgAnimateStart();
+    svgResetAndRedraw();
 }
 
 function nFiltersSub() {
@@ -90,9 +103,22 @@ function nFiltersSub() {
     $('#ccnFilters').html(String(nFilters));
 
     // Draw & animate
+    svgResetAndRedraw();
+}
+
+function svgResetAndRedraw() {
     svgDraw();
-    svgAnimateReset();
-    svgAnimateStart();
+
+    // Check filter selection
+    ixSelOut = Math.min(ixSelOut,nFilters-1);
+
+    if (timeoutID != "") {  
+        // Restart animate
+        svgAnimateStart();
+    } else {
+        // Redraw
+        svgAnimateLoopDraw();
+    }
 }
 
 function drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid) {
@@ -137,39 +163,45 @@ function drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, 
     return new Path(idStr, pts, isGrid);
 }
 
-function svgUnselectAll() {
+function svgResetSelected() {
     selected.forEach(function(item, index, array) {
         $(item).css("fill-opacity","0");
         $(item).css("stroke-opacity","0");
-    })
-
+    });
     selected = [];
+
+    gridHidden.forEach(function(item, index, array) {
+        $(item).css("fill-opacity",gridFillOpacity);
+        $(item).css("stroke-opacity","1");
+    });
+    gridHidden = [];
 }
 
 function svgSelect(ix, iy, iz, loc, inOut, iFilter, isValid) {
     var idStr = '#' + getIdStr(ix,iy,iz,loc,'sel',inOut);
 
     // Turn opacity on
-    $(idStr).css("fill-opacity","0.5");
-    $(idStr).css("stroke-opacity","1");
+    $(idStr).css("fill-opacity",selFillOpacity);
+    $(idStr).css("stroke-opacity",selStrokeOpacity);
 
     // Color
     if (isValid) {
-        let blueVal = 70 + 30*((nFilters-iFilter-1)/(nFilters-1));
-        let col = 'rgb(0%,0%,' + String(blueVal) + '%)';
-        $(idStr).css("fill",col);
+        $(idStr).css("fill",selFillValidRGB(iFilter, nFilters));
     } else {
         // If invalid, color = red
-        $(idStr).css("fill","rgb(100%,0%,0%)");
+        $(idStr).css("fill",selFillInvalidRGB);
     }
 
     selected.push(idStr);
 }
 
-function svgAnimateReset() {
-    ixSelOut = 0;
-    iySelOut = 0;
-    izSelOut = 0;
+function svgGridHide(ix, iy, iz, loc, inOut) {
+    var idStr = '#' + getIdStr(ix,iy,iz,loc,'grid',inOut);
+    $(idStr).css("fill-opacity","0");
+    $(idStr).css("stroke-opacity","0");
+    
+    console.log("hiding: ", idStr);
+    gridHidden.push(idStr);
 }
 
 function svgAnimateStart() {
@@ -179,9 +211,7 @@ function svgAnimateStart() {
     svgAnimateLoop();
 }
 
-function svgAnimateLoop() {
-    svgUnselectAll();
-
+function svgAnimateLoopIncrement() {
     // Output dimensions
     let nzOut = Math.ceil((nz - filter_size + 2*padding)/stride + 1);
     let nyOut = Math.ceil((ny - filter_size + 2*padding)/stride + 1);
@@ -208,7 +238,11 @@ function svgAnimateLoop() {
         iySelOut = 0;
         izSelOut = 0;
     }
-    
+}
+
+function svgAnimateLoopDraw() {
+    svgResetSelected();
+
     // Filter index
     let iFilter = ixSelOut;    
 
@@ -233,6 +267,10 @@ function svgAnimateLoop() {
     for (let ix = 0; ix < nx; ix++) { 
         for (let iz = izSelIn; iz < (izSelIn+filter_size); iz++) {
             svgSelect(ix, iy_top, iz, 'top', 'in', iFilter, isValid);
+
+            if (iy_top == 0) {
+                svgGridHide(ix, 0, iz, 'top', 'in');
+            }
         }
     }
 
@@ -241,6 +279,7 @@ function svgAnimateLoop() {
     for (let iy = iySelIn; iy < (iySelIn+filter_size); iy++) {
         for (let iz = izSelIn; iz < (izSelIn+filter_size); iz++) {
             svgSelect(ix_left, iy, iz, 'left', 'in', iFilter, isValid);
+            svgGridHide(ix_left, iy, iz, 'left', 'in');
         }
     }
 
@@ -249,6 +288,11 @@ function svgAnimateLoop() {
     for (let ix = 0; ix < nx; ix++) { 
         for (let iy = iySelIn; iy < (iySelIn+filter_size); iy++) {
             svgSelect(ix, iy, iz_front, 'front', 'in', iFilter, isValid);
+
+            // Hide if over the edge
+            if (iz_front > nz-1) {
+                svgGridHide(ix, iy, nz-1, 'front', 'in');
+            }
         }
     }
 
@@ -257,6 +301,30 @@ function svgAnimateLoop() {
     svgSelect(ixSelOut, iySelOut, izSelOut, 'left', 'out', iFilter, isValid);
     svgSelect(ixSelOut, iySelOut, izSelOut, 'top', 'out', iFilter, isValid);
 
+    if (ixSelOut == 0) {
+        svgGridHide(0, iySelOut, izSelOut, 'left', 'out');
+    }
+
+    let nzOut = Math.ceil((nz - filter_size + 2*padding)/stride + 1);
+    if (izSelOut == nzOut-1) {
+        svgGridHide(ixSelOut, iySelOut, nzOut-1, 'front', 'out');
+    }
+
+    if (iySelOut == 0) {
+        svgGridHide(ixSelOut, 0, izSelOut, 'top', 'out');
+    }
+}
+
+function svgAnimateLoopStep() {
+    // Increment
+    svgAnimateLoopIncrement();
+
+    // Draw
+    svgAnimateLoopDraw();
+}
+
+function svgAnimateLoop() {
+    svgAnimateLoopStep();
     timeoutID = setTimeout(svgAnimateLoop, 100);
 }
 
