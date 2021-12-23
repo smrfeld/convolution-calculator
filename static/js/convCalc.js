@@ -63,9 +63,51 @@ class Face {
     }
 }
 
-let nx = 3;
-let ny = 9;
-let nz = 9;
+var nx = 3;
+var ny = 9;
+var nz = 9;
+
+function updateNxNyNz() {
+    nxNew = parseInt($("#ccnx").val());
+    if (!isNaN(nxNew)) {
+        nx = nxNew;
+    }
+
+    nyNew = parseInt($("#ccny").val());
+    if (!isNaN(nyNew)) {
+        ny = nyNew;
+    }
+
+    nzNew = parseInt($("#ccnz").val());
+    if (!isNaN(nzNew)) {
+        nz = nzNew;
+    }
+
+    console.log("Changed to: ", nx, ny, nz);
+
+    // Redraw
+    svgDraw();
+}
+
+var filterSize = 1;
+let stride = 2;
+
+var nySub = stride + filterSize + 1;
+var nzSub = stride + filterSize + 1;
+
+function updateParams() {
+    filterSizeNew = parseInt($("#ccfilterSize").val());
+    if (!isNaN(filterSizeNew)) {
+        filterSize = filterSizeNew;
+    }
+
+    nySub = stride + filterSize + 1;
+    nzSub = stride + filterSize + 1;
+    console.log("Changed to nySub, nzSub = ", nySub, nzSub);
+
+    // Redraw
+    svgDraw();
+}
 
 let n_pad_end = 1;
 
@@ -75,8 +117,6 @@ let h_top_left_canvas = 100;
 
 let padding = 0;
 let nFilters = 2;
-let filter_size = 1;
-let stride = 2;
 
 var ixSelOut = 0;
 var iySelOut = 0;
@@ -86,9 +126,6 @@ var selected = [];
 var gridHidden = [];
 
 var idsBottomLayer = [];
-
-let nySub = stride + filter_size + 1;
-let nzSub = stride + filter_size + 1;
 
 function nFiltersAdd() {
     svgAnimateStop();
@@ -112,7 +149,7 @@ function nFiltersSub() {
 }
 
 function svgResetAndRedraw() {
-    svgDraw4();
+    svgDraw();
 
     // Check filter selection
     ixSelOut = Math.min(ixSelOut,nFilters-1);
@@ -204,8 +241,8 @@ function svgAnimateStart() {
 
 function svgAnimateLoopIncrement() {
     // Output dimensions
-    let nzOut = Math.ceil((nz - filter_size + 2*padding)/stride + 1);
-    let nyOut = Math.ceil((ny - filter_size + 2*padding)/stride + 1);
+    let nzOut = Math.ceil((nz - filterSize + 2*padding)/stride + 1);
+    let nyOut = Math.ceil((ny - filterSize + 2*padding)/stride + 1);
     let nxOut = nFilters;
 
     // Next in z direction
@@ -240,10 +277,10 @@ function svgAnimateLoopDraw() {
     // Correct the order of the grid drawing
     var idsBottomLayerNew = []
     // IF the selection is sticking out in the z direction
-    if (izSelIn + filter_size > nz) {
+    if (izSelIn + filterSize > nz) {
         // Hide all the grid front elements below
         for (let ix = 0; ix < nx; ix++) { 
-            for (let iy=iySelIn+filter_size; iy < ny; iy++) {
+            for (let iy=iySelIn+filterSize; iy < ny; iy++) {
                 idsBottomLayerNew.push(getIdStr(ix,iy,nz-1,'front','grid','in'));
             }
         }
@@ -275,10 +312,10 @@ function svgAnimateLoopDraw() {
     let iFilter = ixSelOut;    
 
     // Check if valid
-    if (izSelIn + filter_size > nz) {
+    if (izSelIn + filterSize > nz) {
         // Not valid
         isValid = false;
-    } else if (iySelIn + filter_size > ny) {
+    } else if (iySelIn + filterSize > ny) {
         // Not valid
         isValid = false;
     } else {
@@ -289,7 +326,7 @@ function svgAnimateLoopDraw() {
     // Input top
     let iy_top = iySelIn;
     for (let ix = 0; ix < nx; ix++) { 
-        for (let iz = izSelIn; iz < (izSelIn+filter_size); iz++) {
+        for (let iz = izSelIn; iz < (izSelIn+filterSize); iz++) {
             svgSelect(ix, iy_top, iz, 'top', 'in', iFilter, isValid);
 
             if (iy_top == 0) {
@@ -300,17 +337,17 @@ function svgAnimateLoopDraw() {
 
     // Input left
     let ix_left = 0;
-    for (let iy = iySelIn; iy < (iySelIn+filter_size); iy++) {
-        for (let iz = izSelIn; iz < (izSelIn+filter_size); iz++) {
+    for (let iy = iySelIn; iy < (iySelIn+filterSize); iy++) {
+        for (let iz = izSelIn; iz < (izSelIn+filterSize); iz++) {
             svgSelect(ix_left, iy, iz, 'left', 'in', iFilter, isValid);
             svgGridHide(ix_left, iy, iz, 'left', 'in');
         }
     }
 
     // Input front
-    let iz_front = izSelIn + filter_size - 1;
+    let iz_front = izSelIn + filterSize - 1;
     for (let ix = 0; ix < nx; ix++) { 
-        for (let iy = iySelIn; iy < (iySelIn+filter_size); iy++) {
+        for (let iy = iySelIn; iy < (iySelIn+filterSize); iy++) {
             svgSelect(ix, iy, iz_front, 'front', 'in', iFilter, isValid);
 
             // Hide if over the edge
@@ -329,7 +366,7 @@ function svgAnimateLoopDraw() {
         svgGridHide(0, iySelOut, izSelOut, 'left', 'out');
     }
 
-    let nzOut = Math.ceil((nz - filter_size + 2*padding)/stride + 1);
+    let nzOut = Math.ceil((nz - filterSize + 2*padding)/stride + 1);
     if (izSelOut == nzOut-1) {
         svgGridHide(ixSelOut, iySelOut, nzOut-1, 'front', 'out');
     }
@@ -452,28 +489,46 @@ function svgDrawSel(nxDraw, nyDraw, nzDraw, nPadEndDraw, face, w_top_left_canvas
 }
 
 function svgDraw() {
+    // Check how many pieces to draw
+    if (2*nzSub > nz) {
+        // Only draw one
+        svgDraw1();
+    } else {
+        // Draw pieces
+        svgDraw4();
+    }
+}
+
+function svgDraw1() {
+    console.log("drawing single");
 
     // Draw input
-    let pathsGridIn = svgDrawGrid(nx, ny, nz, face, w_top_left_canvas, h_top_left_canvas, 'in', 0, 0);
-    let pathsSelIn = svgDrawSel(nx, ny, nz, n_pad_end, face, w_top_left_canvas, h_top_left_canvas, 'in', 0, 0);
+    let iyStartForId = 0;
+    let izStartForId = 0;
+    let pathsGridIn = svgDrawGrid(nx, ny, nz, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
+    let pathsSelIn = svgDrawSel(nx, ny, nz, n_pad_end, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
 
     // Draw output
-    let nzOut = Math.ceil((nz - filter_size + 2*padding)/stride + 1);
-    let nyOut = Math.ceil((ny - filter_size + 2*padding)/stride + 1);
+    /*
+    let nzOut = Math.ceil((nz - filterSize + 2*padding)/stride + 1);
+    let nyOut = Math.ceil((ny - filterSize + 2*padding)/stride + 1);
     let nxOut = nFilters;
     let nPadEndOut = 0;
 
     let pathsGridOut = svgDrawGrid(nxOut, nyOut, nzOut, face, w_top_left_canvas+500, h_top_left_canvas, 'out', 0, 0);
     let pathsSelOut = svgDrawSel(nxOut, nyOut, nzOut, nPadEndOut, face, w_top_left_canvas+500, h_top_left_canvas, 'out', 0, 0);
+    */
 
     // Draw
-    let pathsGrid = new Map([pathsGridIn, pathsGridOut]);
-    let pathsSel = new Map([pathsSelIn, pathsSelOut]);
+    let pathsGrid = new Map(function*() { yield* pathsGridIn; }());
+    let pathsSel = new Map(function*() { yield* pathsSelIn; }());
     let svgStr = svgCreateStr(1000,800,pathsGrid,pathsSel);
     $('#ccSVG').html(svgStr);
 }
 
 function svgDraw4() {
+    console.log("drawing four");
+
     // Draw input grids
     var iyStartForId = 0;
     var izStartForId = 0;

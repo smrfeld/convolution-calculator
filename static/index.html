@@ -51,17 +51,29 @@
         <script>
             $(document).ready(function() {
                 // Trigger the draw method on lead
-                svgDraw4();
+                svgDraw();
             });
         </script>
 
-        <h1 id="ccnFilters">2</h1>
+        <h3>nFilters: <span id="ccnFilters">2</span></h3>
         <input type="button" class="button_pw" value="-" onclick="nFiltersSub();">
         <input type="button" class="button_pw" value="+" onclick="nFiltersAdd();">
 
-        <input type="button" class="button_pw" value="start" onclick="svgAnimateStart();">
-        <input type="button" class="button_pw" value="stop" onclick="svgAnimateStop();">
-        <input type="button" class="button_pw" value="loop" onclick="svgAnimateLoopStep();">
+        <h3>nx: <input type="text" class="enter" value="3" id="ccnx" onchange="updateNxNyNz();"
+            onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/> </h3>
+
+        <h3>ny: <input type="text" class="enter" value="9" id="ccny" onchange="updateNxNyNz();"
+            onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/> </h3>
+
+        <h3>nz: <input type="text" class="enter" value="9" id="ccnz" onchange="updateNxNyNz();"
+            onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/> </h3>
+
+        <h3>filterSize: <input type="text" class="enter" value="1" id="ccfilterSize" onchange="updateParams();"
+            onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/> </h3>
+    
+        <input type="button" class="button_pw" value="start" onclick="svgAnimateStart();"/>
+        <input type="button" class="button_pw" value="stop" onclick="svgAnimateStop();"/>
+        <input type="button" class="button_pw" value="loop" onclick="svgAnimateLoopStep();"/>
 
         <!--
         <?xml version="1.0" encoding="UTF-8" standalone="no"?>
