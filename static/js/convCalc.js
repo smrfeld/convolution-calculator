@@ -109,7 +109,7 @@ function updateParams() {
     svgDraw();
 }
 
-let n_pad_end = 1;
+let nPadEnd = 1;
 
 let face = new Face(28, 15, 50);
 let w_top_left_canvas = 100;
@@ -506,7 +506,7 @@ function svgDraw1() {
     let iyStartForId = 0;
     let izStartForId = 0;
     let pathsGridIn = svgDrawGrid(nx, ny, nz, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
-    let pathsSelIn = svgDrawSel(nx, ny, nz, n_pad_end, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
+    let pathsSelIn = svgDrawSel(nx, ny, nz, nPadEnd, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
 
     // Draw output
     /*
@@ -545,7 +545,7 @@ function svgDraw4() {
     iyStartForId = 0;
     izStartForId = nz - nzSub;
     let pathsGridInTR = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
-    let pathsSelInTR = svgDrawSel(nx, nySub, nzSub, n_pad_end, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
+    let pathsSelInTR = svgDrawSel(nx, nySub, nzSub, nPadEnd, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
 
     w_top_left_canvas_sub = w_top_left_canvas + delta_Down_w;
     h_top_left_canvas_sub = h_top_left_canvas + delta_Down_h;
@@ -559,7 +559,7 @@ function svgDraw4() {
     iyStartForId = ny - nySub;
     izStartForId = nz - nzSub;
     let pathsGridInBR = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
-    let pathsSelInBR = svgDrawSel(nx, nySub, nzSub, n_pad_end, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
+    let pathsSelInBR = svgDrawSel(nx, nySub, nzSub, nPadEnd, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
 
     // Draw
     let pathsGrid = new Map(function*() { yield* pathsGridInTL; yield* pathsGridInTR; yield* pathsGridInBL; yield* pathsGridInBR; }());
