@@ -67,6 +67,41 @@ var nx = 3;
 var ny = 9;
 var nz = 9;
 
+var filterSize = 1;
+let stride = 2;
+
+var nySub = stride + filterSize + 1;
+var nzSub = stride + filterSize + 1;
+
+let nzSep = 6;
+let wSep = 20;
+
+let faceBoxDim = 50;
+let faceDx = 28;
+let faceDy = 15;
+var face = new Face(faceDx, faceDy, faceBoxDim);
+
+let nPadEnd = 1;
+
+let w_top_left_canvas = 100;
+let h_top_left_canvas = 100;
+
+let padding = 0;
+let nFilters = 2;
+
+var ixSelOut = 0;
+var iySelOut = 0;
+var izSelOut = -1;
+
+var selected = [];
+var gridHidden = [];
+
+var idsBottomLayer = [];
+
+let nzOut = Math.ceil((nz - filterSize + 2*padding)/stride + 1);
+let nyOut = Math.ceil((ny - filterSize + 2*padding)/stride + 1);
+let nxOut = nFilters;
+
 function updateParams() {
     nxNew = parseInt($("#ccnx").val());
     if (!isNaN(nxNew)) {
@@ -98,40 +133,14 @@ function updateParams() {
     nzSub = Math.min(nz,stride + filterSize + 1);
     console.log("Changed to nySub, nzSub = ", nySub, nzSub);
 
+    // Output dimensions
+    nzOut = Math.ceil((nz - filterSize + 2*padding)/stride + 1);
+    nyOut = Math.ceil((ny - filterSize + 2*padding)/stride + 1);
+    nxOut = nFilters;
+
     // Redraw
     svgDraw();
 }
-
-var filterSize = 1;
-let stride = 2;
-
-var nySub = stride + filterSize + 1;
-var nzSub = stride + filterSize + 1;
-
-let nzSep = 6;
-let wSep = 20;
-
-let faceBoxDim = 50;
-let faceDx = 28;
-let faceDy = 15;
-var face = new Face(faceDx, faceDy, faceBoxDim);
-
-let nPadEnd = 1;
-
-let w_top_left_canvas = 100;
-let h_top_left_canvas = 100;
-
-let padding = 0;
-let nFilters = 2;
-
-var ixSelOut = 0;
-var iySelOut = 0;
-var izSelOut = -1;
-
-var selected = [];
-var gridHidden = [];
-
-var idsBottomLayer = [];
 
 function nFiltersAdd() {
     svgAnimateStop();
@@ -272,10 +281,6 @@ function svgIncrementSely() {
 }
 
 function svgAnimateLoopIncrement() {
-    // Output dimensions
-    let nzOut = Math.ceil((nz - filterSize + 2*padding)/stride + 1);
-    let nyOut = Math.ceil((ny - filterSize + 2*padding)/stride + 1);
-    let nxOut = nFilters;
 
     // Next in z direction
     svgIncrementSelz();
@@ -548,19 +553,13 @@ function svgDraw1() {
     let pathsSelIn = svgDrawSel(nx, ny, nz, nPadEnd, nPadEnd, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
 
     // Draw output
-    /*
-    let nzOut = Math.ceil((nz - filterSize + 2*padding)/stride + 1);
-    let nyOut = Math.ceil((ny - filterSize + 2*padding)/stride + 1);
-    let nxOut = nFilters;
     let nPadEndOut = 0;
-
-    let pathsGridOut = svgDrawGrid(nxOut, nyOut, nzOut, face, w_top_left_canvas+500, h_top_left_canvas, 'out', 0, 0);
-    let pathsSelOut = svgDrawSel(nxOut, nyOut, nzOut, nPadEndOut, face, w_top_left_canvas+500, h_top_left_canvas, 'out', 0, 0);
-    */
+    let pathsGridOut = svgDrawGrid(nxOut, nyOut, nzOut, face, w_top_left_canvas+500, h_top_left_canvas, 'out', iyStartForId, izStartForId);
+    let pathsSelOut = svgDrawSel(nxOut, nyOut, nzOut, nPadEndOut, nPadEndOut, face, w_top_left_canvas+500, h_top_left_canvas, 'out', iyStartForId, izStartForId);
 
     // Draw
-    let pathsGrid = new Map(function*() { yield* pathsGridIn; }());
-    let pathsSel = new Map(function*() { yield* pathsSelIn; }());
+    let pathsGrid = new Map(function*() { yield* pathsGridIn; yield* pathsGridOut; }());
+    let pathsSel = new Map(function*() { yield* pathsSelIn; yield* pathsSelOut; }());
     let svgStr = svgCreateStr(1000,800,pathsGrid,pathsSel);
     $('#ccSVG').html(svgStr);
 }
