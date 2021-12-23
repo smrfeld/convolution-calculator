@@ -64,8 +64,12 @@ class Face {
 }
 
 var nx = 3;
-var ny = 9;
-var nz = 9;
+var nyIn = 9;
+var nzIn = 9;
+
+let padding = 0;
+var ny = nyIn + padding;
+var nz = nzIn + padding;
 
 var filterSize = 1;
 let stride = 2;
@@ -86,7 +90,6 @@ let nPadEnd = 1;
 let w_top_left_canvas = 100;
 let h_top_left_canvas = 100;
 
-let padding = 0;
 let nFilters = 2;
 
 var ixSelOut = 0;
@@ -110,15 +113,20 @@ function updateParams() {
 
     nyNew = parseInt($("#ccny").val());
     if (!isNaN(nyNew)) {
-        ny = nyNew;
+        nyIn = nyNew;
     }
 
     nzNew = parseInt($("#ccnz").val());
     if (!isNaN(nzNew)) {
-        nz = nzNew;
+        nzIn = nzNew;
     }
 
-    console.log("Changed to: ", nx, ny, nz);
+    console.log("Changed input to: ", nx, nyIn, nzIn);
+
+    ny = nyIn + 2*padding;
+    nz = nzIn + 2*padding;
+
+    console.log("Width with padding: ", nx, ny, nz);
 
     // Adjust face dimensions to ensure cubes will not overlap
     faceDx = (nx * faceBoxDim + wSep) / nzSep;
@@ -140,6 +148,18 @@ function updateParams() {
 
     // Redraw
     svgDraw();
+}
+
+function paddingAdd() {
+    padding += 1;
+    $('#ccpadding').html(String(padding));
+    updateParams();
+}
+
+function paddingSub() {
+    padding -= 1;
+    $('#ccpadding').html(String(padding));
+    updateParams();
 }
 
 function nFiltersAdd() {
