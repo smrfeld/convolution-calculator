@@ -15,7 +15,7 @@ class Path {
         s += '<path id="' + this.idStr + '"';
 
         if (this.isGrid) {
-            s += ' style="fill-rule:nonzero;fill:rgb(0%,0%,0%);fill-opacity:0.025;stroke-width:0.1;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;"';
+            s += ' style="fill-rule:nonzero;fill:rgb(90%,90%,90%);fill-opacity:0.8;stroke-width:0.1;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:1;stroke-miterlimit:10;"';
         } else {
             s += ' style="fill-opacity:0;fill:rgb(0%,0%,100%);stroke-width:0.2;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:0;stroke-miterlimit:10;"';
         }
@@ -69,6 +69,31 @@ var ixSelOut = 0;
 var iySelOut = 0;
 var izSelOut = -1;
 var selected = [];
+
+function nFiltersAdd() {
+    svgAnimateStop();
+
+    nFilters += 1;
+    $('#ccnFilters').html(String(nFilters));
+
+    // Draw & animate
+    svgDraw();
+    svgAnimateReset();
+    svgAnimateStart();
+}
+
+function nFiltersSub() {
+    svgAnimateStop();
+
+    nFilters -= 1;
+    nFilters = Math.max(nFilters,1);
+    $('#ccnFilters').html(String(nFilters));
+
+    // Draw & animate
+    svgDraw();
+    svgAnimateReset();
+    svgAnimateStart();
+}
 
 function drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid) {
     let w_top_left = w_top_left_canvas + ix*face.box_dim + iz*face.w_translate;
@@ -139,6 +164,12 @@ function svgSelect(ix, iy, iz, loc, inOut, iFilter, isValid) {
     }
 
     selected.push(idStr);
+}
+
+function svgAnimateReset() {
+    ixSelOut = 0;
+    iySelOut = 0;
+    izSelOut = 0;
 }
 
 function svgAnimateStart() {
@@ -230,7 +261,9 @@ function svgAnimateLoop() {
 }
 
 function svgAnimateStop() {
-    clearTimeout(timeoutID);
+    if (timeoutID != "") {
+        clearTimeout(timeoutID);
+    }
     timeoutID = "";
 }
 
