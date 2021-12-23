@@ -81,18 +81,267 @@ class Face {
     }
 }
 
+class Params {
+    constructor(nx, nyInput, nzInput, padding, nFilters, filterSize, stride) {
+        this.nx = nx;
+        this.nyInput = nyInput;
+        this.nzInput = nzInput;
+        this.padding = padding;
+        this.nFilters = nFilters;
+        this.filterSize = filterSize;
+        this.stride = stride;
+
+        this.recalculate();
+    }
+
+    recalculate() {
+        // Input dimensions to draw
+        this.ny = this.nyInput + 2*this.padding;
+        this.nz = this.nzInput + 2*this.padding;
+
+        // Sub-cube sizes
+        this.nySub = Math.min(this.ny, this.stride + this.filterSize + 1);
+        this.nzSub = Math.min(this.nz, this.stride + this.filterSize + 1);
+
+        // Face
+        this.nzSep = 6;
+        let wSep = 20;
+        let faceBoxDim = 50;
+        let faceDx = (this.nx * faceBoxDim + wSep) / this.nzSep;
+        let faceDy = 15;
+        this.face = new Face(faceDx, faceDy, faceBoxDim);
+
+        // Output dimensions
+        this.nzOut = Math.ceil((this.nz - this.filterSize + 2*this.padding)/this.stride + 1);
+        this.nyOut = Math.ceil((this.ny - this.filterSize + 2*this.padding)/this.stride + 1);
+        this.nxOut = this.nFilters;
+
+        // Padding for drawing hidden parts
+        let nyInCalculatedFromNyOut = this.stride*this.nyOut + this.padding;
+        let nzInCalculatedFromNyOut = this.stride*this.nzOut + this.padding;
+        this.nyPadEndIn = nyInCalculatedFromNyOut - this.ny;
+        this.nzPadEndIn = nzInCalculatedFromNyOut - this.nz;
+
+        // Selection
+        this.ixSelOut = 0;
+        this.iySelOut = 0;
+        this.izSelOut = -1;
+
+        // Drawing parameters
+        this.w_top_left_canvas = 100;
+        this.h_top_left_canvas = 100;
+    }
+
+    checkSelectionValid() {
+        this.ixSelOut = Math.min(this.ixSelOut, this.nFilters-1);
+        this.iySelOut = Math.min(this.iySelOut, this.nyOut-1);
+        this.izSelOut = Math.min(this.izSelOut, this.nzOut-1);
+    }
+
+    svgIncrementSelz() {    
+        this.izSelOut += 1;
+        if (this.nzOut > 4) {
+            // Break in z direction
+            // Only allowed indexes are 0,1 or nzOut-2, nzOut-1
+            if ((this.izSelOut > 1) && (this.izSelOut < this.nzOut-2)) {
+                this.izSelOut = this.nzOut-2;
+            } 
+        }
+    }    
+
+    svgIncrementSely() {    
+        this.iySelOut += 1;
+        if (this.nyOut > 4) {
+            // Break in y direction
+            // Only allowed indexes are 0,1 or nyOut-2, nyOut-1
+            if ((this.iySelOut > 1) && (this.iySelOut < this.nyOut-2)) {
+                this.iySelOut = this.nyOut-2;
+            } 
+        }
+    }
+
+    // svgAnimateLoopIncrement() {
+    svgIncrementSel() {
+
+        // Next in z direction
+        this.svgIncrementSelz();
+    
+        // Check in bounds
+        if (this.izSelOut >= this.nzOut) {
+            // Next in y direction
+            this.svgIncrementSely();
+            this.izSelOut = 0;
+        }
+        if (this.iySelOut >= this.nyOut) {
+            // Next in x direction
+            this.ixSelOut += 1;
+            this.iySelOut = 0;
+            this.izSelOut = 0;
+        }
+        if (this.ixSelOut >= this.nxOut) {
+            // Reset
+            this.ixSelOut = 0;
+            this.iySelOut = 0;
+            this.izSelOut = 0;
+        }
+    }
+}
+
+class DrawingSelections {
+    constructor() {
+        // Selection and unselection for drawing
+        this.selected = [];
+        this.gridHidden = [];
+        this.idsBottomLayer = [];
+    }
+
+    svgAnimateLoopDraw(p) {
+
+        // Selection in input
+        let iySelIn = p.stride * p.iySelOut;
+        let izSelIn = p.stride * p.izSelOut;
+    
+        // Correct the order of the grid drawing
+        var idsBottomLayerNew = []
+        // IF the selection is sticking out in the z direction
+        if (izSelIn + p.filterSize > p.nz) {
+            console.log("Selection is sticking out in the z direction; hiding some of the grid");
+            // Hide all the grid front elements below
+            for (let ix = 0; ix < p.nx; ix++) { 
+                for (let iy= iySelIn + p.filterSize; iy < p.ny; iy++) {
+                    idsBottomLayerNew.push(getIdStr(ix,iy,p.nz-1,'front','grid','in'));
+                }
+            }
+        }
+        if (idsBottomLayerNew.toString() != this.idsBottomLayer.toString()) {
+            // Redraw grid to correct order for selection that is sticking out the front
+            console.log("Redrawing grid to correct order for selection that is sticking out the front");
+            console.log('idsBottomLayer',this.idsBottomLayer);
+            console.log('idsBottomLayerNew',idsBottomLayerNew);
+    
+            this.idsBottomLayer = idsBottomLayerNew;
+            svgDraw();
+        }
+    
+        // Undo existing drawing
+        this.selected.forEach(function(item, index, array) {
+            $(item).css("fill-opacity","0");
+            $(item).css("stroke-opacity","0");
+        });
+        this.selected = [];
+    
+        this.gridHidden.forEach(function(item, index, array) {
+            $(item).css("fill-opacity",gridFillOpacity);
+            $(item).css("stroke-opacity",gridStrokeOpacity);
+        });
+        this.gridHidden = [];
+    
+        // Filter index
+        let iFilter = p.ixSelOut;    
+    
+        // Check if valid
+        var isValid = true;
+        if (izSelIn + p.filterSize > p.nz) {
+            isValid = false;
+        } else if (iySelIn + p.filterSize > p.ny) {
+            isValid = false;
+        }
+    
+        // Input top
+        let iy_top = iySelIn;
+        for (let ix = 0; ix < p.nx; ix++) { 
+            for (let iz = izSelIn; iz < (izSelIn+p.filterSize); iz++) {
+                this.svgSelect(ix, iy_top, iz, 'top', 'in', iFilter, p.nFilters, isValid);
+    
+                if (iy_top == 0) {
+                    this.svgGridHide(ix, 0, iz, 'top', 'in');
+                }
+            }
+        }
+    
+        // Input left
+        let ix_left = 0;
+        for (let iy = iySelIn; iy < (iySelIn+p.filterSize); iy++) {
+            for (let iz = izSelIn; iz < (izSelIn+p.filterSize); iz++) {
+                this.svgSelect(ix_left, iy, iz, 'left', 'in', iFilter, p.nFilters, isValid);
+                this.svgGridHide(ix_left, iy, iz, 'left', 'in');
+            }
+        }
+    
+        // Input front
+        let iz_front = izSelIn + p.filterSize - 1;
+        for (let ix = 0; ix < p.nx; ix++) { 
+            for (let iy = iySelIn; iy < (iySelIn+p.filterSize); iy++) {
+                this.svgSelect(ix, iy, iz_front, 'front', 'in', iFilter, p.nFilters, isValid);
+    
+                // Hide if over the edge
+                if (iz_front >= p.nz-1) {
+                    this.svgGridHide(ix, iy, p.nz-1, 'front', 'in');
+                }
+            }
+        }
+    
+        // Output side
+        this.svgSelect(p.ixSelOut, p.iySelOut, p.izSelOut, 'front', 'out', iFilter, p.nFilters, isValid);
+        this.svgSelect(p.ixSelOut, p.iySelOut, p.izSelOut, 'left', 'out', iFilter, p.nFilters, isValid);
+        this.svgSelect(p.ixSelOut, p.iySelOut, p.izSelOut, 'top', 'out', iFilter, p.nFilters, isValid);
+    
+        if (p.ixSelOut == 0) {
+            this.svgGridHide(0, p.iySelOut, p.izSelOut, 'left', 'out');
+        }
+    
+        if (p.izSelOut == p.nzOut-1) {
+            this.svgGridHide(p.ixSelOut, p.iySelOut, p.nzOut-1, 'front', 'out');
+        }
+    
+        if (p.iySelOut == 0) {
+            this.svgGridHide(p.ixSelOut, 0, p.izSelOut, 'top', 'out');
+        }
+    }
+
+    svgSelect(ix, iy, iz, loc, inOut, iFilter, nFilters, isValid) {
+        var idStr = '#' + getIdStr(ix,iy,iz,loc,'sel',inOut);
+    
+        // Turn opacity on
+        $(idStr).css("fill-opacity",selFillOpacity);
+        $(idStr).css("stroke-opacity",selStrokeOpacity);
+    
+        // Color
+        if (isValid) {
+            $(idStr).css("fill",selFillValidRGB(iFilter, nFilters));
+        } else {
+            // If invalid, color = red
+            $(idStr).css("fill",selFillInvalidRGB);
+        }
+    
+        this.selected.push(idStr);
+    }
+    
+    svgGridHide(ix, iy, iz, loc, inOut) {
+        var idStr = '#' + getIdStr(ix,iy,iz,loc,'grid',inOut);
+        $(idStr).css("fill-opacity","0");
+        $(idStr).css("stroke-opacity","0");
+        
+        this.gridHidden.push(idStr);
+    }
+}
+
+let nx=3, nyInput=9, nzInput=9, padding=0, nFilters=2, filterSize=1, stride=2;
+var p = new Params(nx, nyInput, nzInput, padding, nFilters, filterSize, stride);
+var ds = new DrawingSelections();
+
+/*
 var nx = 3;
-var nyIn = 9;
-var nzIn = 9;
+var nyInput = 9;
+var nzInput = 9;
 
 let padding = 0;
 let nFilters = 2;
-
-var ny = nyIn + 2*padding;
-var nz = nzIn + 2*padding;
-
 var filterSize = 1;
 let stride = 2;
+
+var ny = nyInput + 2*padding;
+var nz = nzInput + 2*padding;
 
 var nySub = stride + filterSize + 1;
 var nzSub = stride + filterSize + 1;
@@ -123,77 +372,57 @@ var izSelOut = -1;
 
 var selected = [];
 var gridHidden = [];
-
 var idsBottomLayer = [];
+*/
 
 function updateParams() {
-    nxNew = parseInt($("#ccnx").val());
-    if (!isNaN(nxNew)) {
-        nx = nxNew;
+    var nx = parseInt($("#ccnx").val());
+    if (isNaN(nx)) {
+        nx = p.nx;
     }
 
-    nyNew = parseInt($("#ccny").val());
-    if (!isNaN(nyNew)) {
-        nyIn = nyNew;
+    var nyInput = parseInt($("#ccnyInput").val());
+    if (isNaN(nyInput)) {
+        nyInput = p.nyInput;
     }
 
-    nzNew = parseInt($("#ccnz").val());
-    if (!isNaN(nzNew)) {
-        nzIn = nzNew;
+    var nzInput = parseInt($("#ccnzInput").val());
+    if (isNaN(nzInput)) {
+        nzInput = p.nzInput;
     }
 
-    console.log("Changed input to: ", nx, nyIn, nzIn);
-
-    ny = nyIn + 2*padding;
-    nz = nzIn + 2*padding;
-
-    console.log("Width with padding: ", nx, ny, nz);
-
-    // Adjust face dimensions to ensure cubes will not overlap
-    faceDx = (nx * faceBoxDim + wSep) / nzSep;
-    face = new Face(faceDx, faceDy, faceBoxDim);
-
-    filterSizeNew = parseInt($("#ccfilterSize").val());
-    if (!isNaN(filterSizeNew)) {
-        filterSize = filterSizeNew;
+    filterSize = parseInt($("#ccfilterSize").val());
+    if (isNaN(filterSize)) {
+        filterSize = p.filterSize;
     }
 
-    nySub = Math.min(ny,stride + filterSize + 1);
-    nzSub = Math.min(nz,stride + filterSize + 1);
-    console.log("Changed to nySub, nzSub = ", nySub, nzSub);
-
-    // Output dimensions
-    nzOut = Math.ceil((nz - filterSize + 2*padding)/stride + 1);
-    nyOut = Math.ceil((ny - filterSize + 2*padding)/stride + 1);
-    nxOut = nFilters;
-
-    // Calculate padding on input
-    nyInCalculatedFromNyOut = stride*nyOut + padding;
-    nzInCalculatedFromNyOut = stride*nzOut + padding;
-    nyPadEndIn = nyInCalculatedFromNyOut - ny;
-    nzPadEndIn = nzInCalculatedFromNyOut - nz;
+    // Update params
+    p = new Params(nx, nyInput, nzInput, padding, nFilters, filterSize, stride);
 
     // Redraw
     svgDraw();
 }
 
 function paddingAdd() {
-    padding += 1;
-    $('#ccpadding').html(String(padding));
-    updateParams();
+    p.padding += 1;
+    $('#ccpadding').html(String(p.padding));
+    p.recalculate();
+    svgDraw();
 }
 
 function paddingSub() {
-    padding -= 1;
-    $('#ccpadding').html(String(padding));
-    updateParams();
+    p.padding -= 1;
+    $('#ccpadding').html(String(p.padding));
+    p.recalculate();
+    svgDraw();
 }
 
 function nFiltersAdd() {
     svgAnimateStop();
 
-    nFilters += 1;
-    $('#ccnFilters').html(String(nFilters));
+    p.nFilters += 1;
+    $('#ccnFilters').html(String(p.nFilters));
+    p.recalculate();
 
     // Draw & animate
     svgResetAndRedraw();
@@ -202,9 +431,10 @@ function nFiltersAdd() {
 function nFiltersSub() {
     svgAnimateStop();
 
-    nFilters -= 1;
-    nFilters = Math.max(nFilters,1);
-    $('#ccnFilters').html(String(nFilters));
+    p.nFilters -= 1;
+    p.nFilters = Math.max(p.nFilters,1);
+    $('#ccnFilters').html(String(p.nFilters));
+    p.recalculate();
 
     // Draw & animate
     svgResetAndRedraw();
@@ -213,85 +443,58 @@ function nFiltersSub() {
 function svgResetAndRedraw() {
     svgDraw();
 
-    // Check filter selection
-    ixSelOut = Math.min(ixSelOut,nFilters-1);
+    // Check filter selection is valid
+    p.checkSelectionValid();
 
     if (timeoutID != "") {  
         // Restart animate
         svgAnimateStart();
     } else {
         // Redraw
-        svgAnimateLoopDraw();
+        ds.svgAnimateLoopDraw(p);
     }
 }
 
-function drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid, isPadding) {
-    let w_top_left = w_top_left_canvas + ix*face.box_dim + iz*face.w_translate;
-    let h_top_left = h_top_left_canvas + iy*face.box_dim + iz*face.h_translate;
+function drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, isGrid, isPadding) {
+    let w_top_left = w_top_left_canvas + ix*p.face.box_dim + iz*p.face.w_translate;
+    let h_top_left = h_top_left_canvas + iy*p.face.box_dim + iz*p.face.h_translate;
 
     let pts = [
         [w_top_left, h_top_left],
-        [w_top_left + face.box_dim, h_top_left],
-        [w_top_left + face.box_dim + face.w_translate, h_top_left + face.h_translate],
-        [w_top_left + face.w_translate, h_top_left + face.h_translate],
+        [w_top_left + p.face.box_dim, h_top_left],
+        [w_top_left + p.face.box_dim + p.face.w_translate, h_top_left + p.face.h_translate],
+        [w_top_left + p.face.w_translate, h_top_left + p.face.h_translate],
         [w_top_left, h_top_left]
         ];
     return new Path(idStr, pts, isGrid, isPadding);
 }
 
-function drawFaceLeft(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid, isPadding) {
-    let w_top_left = w_top_left_canvas + iz*face.w_translate + ix*face.box_dim;
-    let h_top_left = h_top_left_canvas + iz*face.h_translate + iy*face.box_dim;
+function drawFaceLeft(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, isGrid, isPadding) {
+    let w_top_left = w_top_left_canvas + iz*p.face.w_translate + ix*p.face.box_dim;
+    let h_top_left = h_top_left_canvas + iz*p.face.h_translate + iy*p.face.box_dim;
 
     let pts = [
         [w_top_left, h_top_left],
-        [w_top_left + face.w_translate, h_top_left + face.h_translate],
-        [w_top_left + face.w_translate, h_top_left + face.h_translate + face.box_dim],
-        [w_top_left, h_top_left + face.box_dim],
+        [w_top_left + p.face.w_translate, h_top_left + p.face.h_translate],
+        [w_top_left + p.face.w_translate, h_top_left + p.face.h_translate + p.face.box_dim],
+        [w_top_left, h_top_left + p.face.box_dim],
         [w_top_left, h_top_left]
         ];
     return new Path(idStr, pts, isGrid, isPadding);
 }
 
-function drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid, isPadding) {
-    let w_top_left = w_top_left_canvas + ix*face.box_dim + (1+iz) * face.w_translate;
-    let h_top_left = h_top_left_canvas + iy*face.box_dim + (1+iz) * face.h_translate;
+function drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, isGrid, isPadding) {
+    let w_top_left = w_top_left_canvas + ix*p.face.box_dim + (1+iz) * p.face.w_translate;
+    let h_top_left = h_top_left_canvas + iy*p.face.box_dim + (1+iz) * p.face.h_translate;
 
     let pts = [
         [w_top_left, h_top_left],
-        [w_top_left + face.box_dim, h_top_left],
-        [w_top_left + face.box_dim, h_top_left + face.box_dim],
-        [w_top_left, h_top_left + face.box_dim],
+        [w_top_left + p.face.box_dim, h_top_left],
+        [w_top_left + p.face.box_dim, h_top_left + p.face.box_dim],
+        [w_top_left, h_top_left + p.face.box_dim],
         [w_top_left, h_top_left]
         ];
     return new Path(idStr, pts, isGrid, isPadding);
-}
-
-function svgSelect(ix, iy, iz, loc, inOut, iFilter, isValid) {
-    var idStr = '#' + getIdStr(ix,iy,iz,loc,'sel',inOut);
-    // console.log('selecting', idStr)
-
-    // Turn opacity on
-    $(idStr).css("fill-opacity",selFillOpacity);
-    $(idStr).css("stroke-opacity",selStrokeOpacity);
-
-    // Color
-    if (isValid) {
-        $(idStr).css("fill",selFillValidRGB(iFilter, nFilters));
-    } else {
-        // If invalid, color = red
-        $(idStr).css("fill",selFillInvalidRGB);
-    }
-
-    selected.push(idStr);
-}
-
-function svgGridHide(ix, iy, iz, loc, inOut) {
-    var idStr = '#' + getIdStr(ix,iy,iz,loc,'grid',inOut);
-    $(idStr).css("fill-opacity","0");
-    $(idStr).css("stroke-opacity","0");
-    
-    gridHidden.push(idStr);
 }
 
 function svgAnimateStart() {
@@ -301,172 +504,12 @@ function svgAnimateStart() {
     svgAnimateLoop();
 }
 
-function svgIncrementSelz() {
-    let nzOut = Math.ceil((nz - filterSize + 2*padding)/stride + 1);
-
-    izSelOut += 1;
-    if (nzOut > 4) {
-        // Break in z direction
-        // Only allowed indexes are 0,1 or nzOut-2, nzOut-1
-        if ((izSelOut > 1) && (izSelOut < nzOut-2)) {
-            izSelOut = nzOut-2;
-        } 
-    }
-}
-
-function svgIncrementSely() {
-    let nyOut = Math.ceil((ny - filterSize + 2*padding)/stride + 1);
-
-    iySelOut += 1;
-    if (nyOut > 4) {
-        // Break in y direction
-        // Only allowed indexes are 0,1 or nyOut-2, nyOut-1
-        if ((iySelOut > 1) && (iySelOut < nyOut-2)) {
-            iySelOut = nyOut-2;
-        } 
-    }
-}
-
-function svgAnimateLoopIncrement() {
-
-    // Next in z direction
-    svgIncrementSelz();
-
-    // Check in bounds
-    if (izSelOut >= nzOut) {
-        // Next in y direction
-        svgIncrementSely();
-        izSelOut = 0;
-    }
-    if (iySelOut >= nyOut) {
-        // Next in x direction
-        ixSelOut += 1;
-        iySelOut = 0;
-        izSelOut = 0;
-    }
-    if (ixSelOut >= nxOut) {
-        // Reset
-        ixSelOut = 0;
-        iySelOut = 0;
-        izSelOut = 0;
-    }
-}
-
-function svgAnimateLoopDraw() {
-
-    // Selection in input
-    iySelIn = stride * iySelOut;
-    izSelIn = stride * izSelOut;
-
-    // Correct the order of the grid drawing
-    var idsBottomLayerNew = []
-    // IF the selection is sticking out in the z direction
-    if (izSelIn + filterSize > nz) {
-        console.log("Selection is sticking out in the z direction; hiding some of the grid");
-        // Hide all the grid front elements below
-        for (let ix = 0; ix < nx; ix++) { 
-            for (let iy=iySelIn+filterSize; iy < ny; iy++) {
-                idsBottomLayerNew.push(getIdStr(ix,iy,nz-1,'front','grid','in'));
-            }
-        }
-    }
-    if (idsBottomLayerNew.toString() != idsBottomLayer.toString()) {
-        // Redraw grid to correct order for selection that is sticking out the front
-        console.log("Redrawing grid to correct order for selection that is sticking out the front");
-        console.log('idsBottomLayer',idsBottomLayer);
-        console.log('idsBottomLayerNew',idsBottomLayerNew);
-
-        idsBottomLayer = idsBottomLayerNew;
-        svgDraw();
-    }
-
-    // Undo existing drawing
-    selected.forEach(function(item, index, array) {
-        $(item).css("fill-opacity","0");
-        $(item).css("stroke-opacity","0");
-    });
-    selected = [];
-
-    gridHidden.forEach(function(item, index, array) {
-        $(item).css("fill-opacity",gridFillOpacity);
-        $(item).css("stroke-opacity",gridStrokeOpacity);
-    });
-    gridHidden = [];
-
-    // Filter index
-    let iFilter = ixSelOut;    
-
-    // Check if valid
-    if (izSelIn + filterSize > nz) {
-        // Not valid
-        isValid = false;
-    } else if (iySelIn + filterSize > ny) {
-        // Not valid
-        isValid = false;
-    } else {
-        // Valid
-        isValid = true;
-    }
-
-    // Input top
-    let iy_top = iySelIn;
-    for (let ix = 0; ix < nx; ix++) { 
-        for (let iz = izSelIn; iz < (izSelIn+filterSize); iz++) {
-            svgSelect(ix, iy_top, iz, 'top', 'in', iFilter, isValid);
-
-            if (iy_top == 0) {
-                svgGridHide(ix, 0, iz, 'top', 'in');
-            }
-        }
-    }
-
-    // Input left
-    let ix_left = 0;
-    for (let iy = iySelIn; iy < (iySelIn+filterSize); iy++) {
-        for (let iz = izSelIn; iz < (izSelIn+filterSize); iz++) {
-            svgSelect(ix_left, iy, iz, 'left', 'in', iFilter, isValid);
-            svgGridHide(ix_left, iy, iz, 'left', 'in');
-        }
-    }
-
-    // Input front
-    let iz_front = izSelIn + filterSize - 1;
-    for (let ix = 0; ix < nx; ix++) { 
-        for (let iy = iySelIn; iy < (iySelIn+filterSize); iy++) {
-            svgSelect(ix, iy, iz_front, 'front', 'in', iFilter, isValid);
-
-            // Hide if over the edge
-            if (iz_front >= nz-1) {
-                svgGridHide(ix, iy, nz-1, 'front', 'in');
-            }
-        }
-    }
-
-    // Output side
-    svgSelect(ixSelOut, iySelOut, izSelOut, 'front', 'out', iFilter, isValid);
-    svgSelect(ixSelOut, iySelOut, izSelOut, 'left', 'out', iFilter, isValid);
-    svgSelect(ixSelOut, iySelOut, izSelOut, 'top', 'out', iFilter, isValid);
-
-    if (ixSelOut == 0) {
-        svgGridHide(0, iySelOut, izSelOut, 'left', 'out');
-    }
-
-    let nzOut = Math.ceil((nz - filterSize + 2*padding)/stride + 1);
-    if (izSelOut == nzOut-1) {
-        svgGridHide(ixSelOut, iySelOut, nzOut-1, 'front', 'out');
-    }
-
-    if (iySelOut == 0) {
-        svgGridHide(ixSelOut, 0, izSelOut, 'top', 'out');
-    }
-}
-
 function svgAnimateLoopStep() {
     // Increment
-    svgAnimateLoopIncrement();
+    p.svgIncrementSel();
 
     // Draw
-    svgAnimateLoopDraw();
+    ds.svgAnimateLoopDraw(p);
 }
 
 function svgAnimateLoop() {
@@ -486,7 +529,7 @@ function svgCreateStr(width, height, pathsGrid, pathsSel) {
     svgStr += '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" viewBox="0 0 ' + String(width) + ' ' + String(height) + '">\n';
     
     // Bottom paths first
-    idsBottomLayer.forEach(function(item, index, array) {
+    ds.idsBottomLayer.forEach(function(item, index, array) {
         if (pathsGrid.has(item)) {
             svgStr += pathsGrid.get(item).svgStr() + '\n';
             pathsGrid.delete(item);
@@ -513,7 +556,7 @@ function getIdStr(ix, iy, iz, loc, obj, inOut) {
     return String(ix).padStart(3, '0') + '_' + String(iy).padStart(3, '0') + '_' + String(iz).padStart(3, '0') + '_' + inOut + '_' + loc + '_' + obj;
 }
 
-function svgDrawGrid(nxDraw, nyDraw, nzDraw, face, w_top_left_canvas, h_top_left_canvas, inOut, iyStartForId, izStartForId, 
+function svgDrawGrid(nxDraw, nyDraw, nzDraw, w_top_left_canvas, h_top_left_canvas, inOut, iyStartForId, izStartForId, 
     paddingyTop, paddingyBottom, paddingzLeft, paddingzRight) {
     const paths = new Map();
 
@@ -530,7 +573,7 @@ function svgDrawGrid(nxDraw, nyDraw, nzDraw, face, w_top_left_canvas, h_top_left
             } else {
                 isPadding = false;
             }
-            paths.set(idStr, drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy_level, iz, face, isGrid, isPadding));
+            paths.set(idStr, drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy_level, iz, isGrid, isPadding));
         }
     }
 
@@ -544,7 +587,7 @@ function svgDrawGrid(nxDraw, nyDraw, nzDraw, face, w_top_left_canvas, h_top_left
             } else {
                 isPadding = false;
             }
-            paths.set(idStr, drawFaceLeft(idStr, w_top_left_canvas, h_top_left_canvas, ix_level, iy, iz, face, isGrid, isPadding));
+            paths.set(idStr, drawFaceLeft(idStr, w_top_left_canvas, h_top_left_canvas, ix_level, iy, iz, isGrid, isPadding));
         }
     }
 
@@ -558,14 +601,14 @@ function svgDrawGrid(nxDraw, nyDraw, nzDraw, face, w_top_left_canvas, h_top_left
             } else {
                 isPadding = false;
             }
-            paths.set(idStr, drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz_level, face, isGrid, isPadding));
+            paths.set(idStr, drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz_level, isGrid, isPadding));
         }
     }
 
     return paths;
 }
 
-function svgDrawSel(nxDraw, nyDraw, nzDraw, nyPadEndDraw, nzPadEndDraw, face, w_top_left_canvas, h_top_left_canvas, inOut, iyStartForId, izStartForId) {
+function svgDrawSel(nxDraw, nyDraw, nzDraw, nyPadEndDraw, nzPadEndDraw, w_top_left_canvas, h_top_left_canvas, inOut, iyStartForId, izStartForId) {
     const paths = new Map();
 
     let isGrid = false;
@@ -575,13 +618,13 @@ function svgDrawSel(nxDraw, nyDraw, nzDraw, nyPadEndDraw, nzPadEndDraw, face, w_
         for (let iy = 0; iy < nyDraw+nyPadEndDraw; iy++) { 
             for (let iz = 0; iz < nzDraw+nzPadEndDraw; iz++) {
                 idStr = getIdStr(ix,iyStartForId+iy,izStartForId+iz,'top','sel',inOut);
-                paths.set(idStr, drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid));
+                paths.set(idStr, drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, isGrid));
                 
                 idStr = getIdStr(ix,iyStartForId+iy,izStartForId+iz,'left','sel',inOut);
-                paths.set(idStr, drawFaceLeft(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid));
+                paths.set(idStr, drawFaceLeft(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, isGrid));
                 
                 idStr = getIdStr(ix,iyStartForId+iy,izStartForId+iz,'front','sel',inOut);
-                paths.set(idStr, drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid));
+                paths.set(idStr, drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, isGrid));
             }
         }
     }
@@ -590,36 +633,37 @@ function svgDrawSel(nxDraw, nyDraw, nzDraw, nyPadEndDraw, nzPadEndDraw, face, w_
 }
 
 function svgDraw() {
+    console.log(p);
     // Check how many pieces to draw
-    if ((2*nzSub > nz) && (2*nySub > ny)) {
+    if ((2*p.nzSub > p.nz) && (2*p.nySub > p.ny)) {
         // Only draw one
-        svgDraw1();
-    } else if (2*nzSub > nz) {
+        svgDraw1(p);
+    } else if (2*p.nzSub > p.nz) {
         // Only draw vertical
-        svgDraw2vert();
-    } else if (2*nySub > ny) {
+        svgDraw2vert(p);
+    } else if (2*p.nySub > p.ny) {
         // Only draw horizontal
-        svgDraw2horiz();
+        svgDraw2horiz(p);
     } else {
         // Draw all 4 pieces
-        svgDraw4();
+        svgDraw4(p);
     }
 }
 
-function svgDraw1() {
+function svgDraw1(p) {
     console.log("drawing single");
 
     // Draw input
-    var paddingyTop = padding;
-    var paddingyBottom = padding;
-    var paddingzLeft = padding;
-    var paddingzRight = padding;
+    var paddingyTop = p.padding;
+    var paddingyBottom = p.padding;
+    var paddingzLeft = p.padding;
+    var paddingzRight = p.padding;
 
     let iyStartForId = 0;
     let izStartForId = 0;
-    let pathsGridIn = svgDrawGrid(nx, ny, nz, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId, 
+    let pathsGridIn = svgDrawGrid(p.nx, p.ny, p.nz, p.w_top_left_canvas, p.h_top_left_canvas, 'in', iyStartForId, izStartForId, 
         paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
-    let pathsSelIn = svgDrawSel(nx, ny, nz, nyPadEndIn, nzPadEndIn, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
+    let pathsSelIn = svgDrawSel(p.nx, p.ny, p.nz, p.nyPadEndIn, p.nzPadEndIn, p.w_top_left_canvas, p.h_top_left_canvas, 'in', iyStartForId, izStartForId);
 
     // Draw output
     paddingyTop = 0;
@@ -627,9 +671,9 @@ function svgDraw1() {
     paddingzLeft = 0;
     paddingzRight = 0;
     let nPadEndOut = 0;
-    let pathsGridOut = svgDrawGrid(nxOut, nyOut, nzOut, face, w_top_left_canvas+500, h_top_left_canvas, 'out', iyStartForId, izStartForId,
+    let pathsGridOut = svgDrawGrid(p.nxOut, p.nyOut, p.nzOut, p.w_top_left_canvas+500, p.h_top_left_canvas, 'out', iyStartForId, izStartForId,
         paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
-    let pathsSelOut = svgDrawSel(nxOut, nyOut, nzOut, nPadEndOut, nPadEndOut, face, w_top_left_canvas+500, h_top_left_canvas, 'out', iyStartForId, izStartForId);
+    let pathsSelOut = svgDrawSel(p.nxOut, p.nyOut, p.nzOut, nPadEndOut, nPadEndOut, p.w_top_left_canvas+500, p.h_top_left_canvas, 'out', iyStartForId, izStartForId);
 
     // Draw
     let pathsGrid = new Map(function*() { yield* pathsGridIn; yield* pathsGridOut; }());
@@ -638,77 +682,79 @@ function svgDraw1() {
     $('#ccSVG').html(svgStr);
 }
 
-function svgDraw4() {
+function svgDraw4(p) {
     console.log("drawing four");
 
     // Draw input grids
 
     // Top-left
-    var paddingyTop = padding;
+    var paddingyTop = p.padding;
     var paddingyBottom = 0;
-    var paddingzLeft = padding;
+    var paddingzLeft = p.padding;
     var paddingzRight = 0;
 
     var iyStartForId = 0;
     var izStartForId = 0;
     var nyPadEnd = 0;
     var nzPadEnd = 0;
-    let pathsGridInTL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId,
+    let pathsGridInTL = svgDrawGrid(p.nx, p.nySub, p.nzSub, p.w_top_left_canvas, p.h_top_left_canvas, 'in', iyStartForId, izStartForId,
         paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
-    let pathsSelInTL = svgDrawSel(nx, nySub, nzSub, nyPadEnd, nzPadEnd, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
+    let pathsSelInTL = svgDrawSel(p.nx, p.nySub, p.nzSub, nyPadEnd, nzPadEnd, p.w_top_left_canvas, p.h_top_left_canvas, 'in', iyStartForId, izStartForId);
 
     // Top right
-    paddingyTop = padding;
+    paddingyTop = p.padding;
     paddingyBottom = 0;
     paddingzLeft = 0;
-    paddingzRight = padding;
+    paddingzRight = p.padding;
 
-    let delta_Right_w = (nzSub+nzSep)*face.w_translate;
-    let delta_Right_h = (nzSub+nzSep)*face.h_translate;
+    console.log(p);
+    console.log(p.face);
+    let delta_Right_w = (p.nzSub+p.nzSep) * p.face.w_translate;
+    let delta_Right_h = (p.nzSub+p.nzSep) * p.face.h_translate;
     let delta_Down_w = 0;
-    let delta_Down_h = nzSub*face.h_translate + (nySub+1)*face.box_dim;
+    let delta_Down_h = p.nzSub * p.face.h_translate + (p.nySub+1) * p.face.box_dim;
 
-    var w_top_left_canvas_sub = w_top_left_canvas + delta_Right_w;
-    var h_top_left_canvas_sub = h_top_left_canvas + delta_Right_h;
+    var w_top_left_canvas_sub = p.w_top_left_canvas + delta_Right_w;
+    var h_top_left_canvas_sub = p.h_top_left_canvas + delta_Right_h;
     iyStartForId = 0;
-    izStartForId = nz - nzSub;
+    izStartForId = p.nz - p.nzSub;
     nyPadEnd = 0;
-    nzPadEnd = nzPadEndIn;
-    let pathsGridInTR = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId,
+    nzPadEnd = p.nzPadEndIn;
+    let pathsGridInTR = svgDrawGrid(p.nx, p.nySub, p.nzSub, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId,
         paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
-    let pathsSelInTR = svgDrawSel(nx, nySub, nzSub, nyPadEnd, nzPadEnd, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
+    let pathsSelInTR = svgDrawSel(p.nx, p.nySub, p.nzSub, nyPadEnd, nzPadEnd, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
 
     // Bottom-left
     paddingyTop = 0;
-    paddingyBottom = padding;
-    paddingzLeft = padding;
+    paddingyBottom = p.padding;
+    paddingzLeft = p.padding;
     paddingzRight = 0;
 
-    w_top_left_canvas_sub = w_top_left_canvas + delta_Down_w;
-    h_top_left_canvas_sub = h_top_left_canvas + delta_Down_h;
-    iyStartForId = ny - nySub;
+    w_top_left_canvas_sub = p.w_top_left_canvas + delta_Down_w;
+    h_top_left_canvas_sub = p.h_top_left_canvas + delta_Down_h;
+    iyStartForId = p.ny - p.nySub;
     izStartForId = 0;
-    nyPadEnd = nyPadEndIn;
+    nyPadEnd = p.nyPadEndIn;
     nzPadEnd = 0;
-    let pathsGridInBL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId,
+    let pathsGridInBL = svgDrawGrid(p.nx, p.nySub, p.nzSub, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId,
         paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
-    let pathsSelInBL = svgDrawSel(nx, nySub, nzSub, nyPadEnd, nzPadEnd, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
+    let pathsSelInBL = svgDrawSel(p.nx, p.nySub, p.nzSub, nyPadEnd, nzPadEnd, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
 
     // Bottom-right
     paddingyTop = 0;
-    paddingyBottom = padding;
+    paddingyBottom = p.padding;
     paddingzLeft = 0;
-    paddingzRight = padding;
+    paddingzRight = p.padding;
 
-    w_top_left_canvas_sub = w_top_left_canvas + delta_Down_w + delta_Right_w;
-    h_top_left_canvas_sub = h_top_left_canvas + delta_Down_h + delta_Right_h;
-    iyStartForId = ny - nySub;
-    izStartForId = nz - nzSub;
-    nyPadEnd = nyPadEndIn;
-    nzPadEnd = nzPadEndIn;
-    let pathsGridInBR = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId,
+    w_top_left_canvas_sub = p.w_top_left_canvas + delta_Down_w + delta_Right_w;
+    h_top_left_canvas_sub = p.h_top_left_canvas + delta_Down_h + delta_Right_h;
+    iyStartForId = p.ny - p.nySub;
+    izStartForId = p.nz - p.nzSub;
+    nyPadEnd = p.nyPadEndIn;
+    nzPadEnd = p.nzPadEndIn;
+    let pathsGridInBR = svgDrawGrid(p.nx, p.nySub, p.nzSub, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId,
         paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
-    let pathsSelInBR = svgDrawSel(nx, nySub, nzSub, nyPadEnd, nzPadEnd, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
+    let pathsSelInBR = svgDrawSel(p.nx, p.nySub, p.nzSub, nyPadEnd, nzPadEnd, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
 
     // Draw
     let pathsGrid = new Map(function*() { yield* pathsGridInTL; yield* pathsGridInTR; yield* pathsGridInBL; yield* pathsGridInBR; }());
@@ -717,28 +763,28 @@ function svgDraw4() {
     $('#ccSVG').html(svgStr);
 }
 
-function svgDraw2vert() {
+function svgDraw2vert(p) {
     console.log("drawing 2 vertical");
 
     // Draw input grids
     var nyPadEnd = 0;
-    var nzPadEnd = nzPadEndIn;
+    var nzPadEnd = p.nzPadEndIn;
     var iyStartForId = 0;
     var izStartForId = 0;
-    let pathsGridInTL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
-    let pathsSelInTL = svgDrawSel(nx, nySub, nzSub, nyPadEnd, nzPadEnd, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
+    let pathsGridInTL = svgDrawGrid(p.nx, p.nySub, p.nzSub, p.w_top_left_canvas, p.h_top_left_canvas, 'in', iyStartForId, izStartForId);
+    let pathsSelInTL = svgDrawSel(p.nx, p.nySub, p.nzSub, nyPadEnd, nzPadEnd, p.w_top_left_canvas, p.h_top_left_canvas, 'in', iyStartForId, izStartForId);
 
     let delta_Down_w = 0;
-    let delta_Down_h = nzSub*face.h_translate + (nySub+1)*face.box_dim;
+    let delta_Down_h = p.nzSub * p.face.h_translate + (p.nySub+1) * p.face.box_dim;
 
-    w_top_left_canvas_sub = w_top_left_canvas + delta_Down_w;
-    h_top_left_canvas_sub = h_top_left_canvas + delta_Down_h;
-    iyStartForId = ny - nySub;
+    w_top_left_canvas_sub = p.w_top_left_canvas + delta_Down_w;
+    h_top_left_canvas_sub = p.h_top_left_canvas + delta_Down_h;
+    iyStartForId = p.ny - p.nySub;
     izStartForId = 0;
     nyPadEnd = nyPadEndIn;
     nzPadEnd = nzPadEndIn;
-    let pathsGridInBL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
-    let pathsSelInBL = svgDrawSel(nx, nySub, nzSub, nyPadEnd, nzPadEnd, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
+    let pathsGridInBL = svgDrawGrid(p.nx, p.nySub, p.nzSub, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
+    let pathsSelInBL = svgDrawSel(p.nx, p.nySub, p.nzSub, nyPadEnd, nzPadEnd, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
 
     // Draw
     let pathsGrid = new Map(function*() { yield* pathsGridInTL; yield* pathsGridInBL; }());
@@ -748,28 +794,28 @@ function svgDraw2vert() {
 }
 
 
-function svgDraw2horiz() {
+function svgDraw2horiz(p) {
     console.log("drawing 2 horizontal");
 
     // Draw input grids
-    var nyPadEnd = nyPadEndIn;
+    var nyPadEnd = p.nyPadEndIn;
     var nzPadEnd = 0;
     var iyStartForId = 0;
     var izStartForId = 0;
-    let pathsGridInTL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
-    let pathsSelInTL = svgDrawSel(nx, nySub, nzSub, nyPadEnd, nzPadEnd, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
+    let pathsGridInTL = svgDrawGrid(p.nx, p.nySub, p.nzSub, p.w_top_left_canvas, p.h_top_left_canvas, 'in', iyStartForId, izStartForId);
+    let pathsSelInTL = svgDrawSel(p.nx, p.nySub, p.nzSub, nyPadEnd, nzPadEnd, p.w_top_left_canvas, p.h_top_left_canvas, 'in', iyStartForId, izStartForId);
 
-    let delta_Right_w = (nzSub+nzSep)*face.w_translate;
-    let delta_Right_h = (nzSub+nzSep)*face.h_translate;
+    let delta_Right_w = (p.nzSub+p.nzSep) * p.face.w_translate;
+    let delta_Right_h = (p.nzSub+p.nzSep) * p.face.h_translate;
 
-    var w_top_left_canvas_sub = w_top_left_canvas + delta_Right_w;
-    var h_top_left_canvas_sub = h_top_left_canvas + delta_Right_h;
+    var w_top_left_canvas_sub = p.w_top_left_canvas + delta_Right_w;
+    var h_top_left_canvas_sub = p.h_top_left_canvas + delta_Right_h;
     iyStartForId = 0;
-    izStartForId = nz - nzSub;
-    nyPadEnd = nyPadEndIn;
-    nzPadEnd = nzPadEndIn;
-    let pathsGridInTR = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
-    let pathsSelInTR = svgDrawSel(nx, nySub, nzSub, nyPadEnd, nzPadEnd, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
+    izStartForId = p.nz - p.nzSub;
+    nyPadEnd = p.nyPadEndIn;
+    nzPadEnd = p.nzPadEndIn;
+    let pathsGridInTR = svgDrawGrid(p.nx, p.nySub, p.nzSub, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
+    let pathsSelInTR = svgDrawSel(p.nx, p.nySub, p.nzSub, nyPadEnd, nzPadEnd, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
 
     // Draw
     let pathsGrid = new Map(function*() { yield* pathsGridInTL; yield* pathsGridInTR; }());
