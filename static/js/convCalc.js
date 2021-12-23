@@ -213,7 +213,7 @@ function drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, 
 
 function svgSelect(ix, iy, iz, loc, inOut, iFilter, isValid) {
     var idStr = '#' + getIdStr(ix,iy,iz,loc,'sel',inOut);
-    console.log('selecting', idStr)
+    // console.log('selecting', idStr)
 
     // Turn opacity on
     $(idStr).css("fill-opacity",selFillOpacity);
@@ -284,6 +284,7 @@ function svgAnimateLoopDraw() {
     var idsBottomLayerNew = []
     // IF the selection is sticking out in the z direction
     if (izSelIn + filterSize > nz) {
+        console.log("Selection is sticking out in the z direction; hiding some of the grid");
         // Hide all the grid front elements below
         for (let ix = 0; ix < nx; ix++) { 
             for (let iy=iySelIn+filterSize; iy < ny; iy++) {
@@ -357,7 +358,7 @@ function svgAnimateLoopDraw() {
             svgSelect(ix, iy, iz_front, 'front', 'in', iFilter, isValid);
 
             // Hide if over the edge
-            if (iz_front > nz-1) {
+            if (iz_front >= nz-1) {
                 svgGridHide(ix, iy, nz-1, 'front', 'in');
             }
         }
