@@ -69,7 +69,7 @@ let nz = 9;
 
 let n_pad_end = 1;
 
-let face = new Face(30, 20, 50);
+let face = new Face(28, 15, 50);
 let w_top_left_canvas = 100;
 let h_top_left_canvas = 100;
 
@@ -166,7 +166,7 @@ function drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, 
 }
 
 function svgSelect(ix, iy, iz, loc, inOut, iFilter, isValid) {
-    var idStr = '#' + getIdStr(ix,iy,iz,loc,'sel',inOut);
+    var idStr = '#' + getIdStr(ix,iy,iz,loc,'sel',inOut,'only');
 
     // Turn opacity on
     $(idStr).css("fill-opacity",selFillOpacity);
@@ -184,7 +184,7 @@ function svgSelect(ix, iy, iz, loc, inOut, iFilter, isValid) {
 }
 
 function svgGridHide(ix, iy, iz, loc, inOut) {
-    var idStr = '#' + getIdStr(ix,iy,iz,loc,'grid',inOut);
+    var idStr = '#' + getIdStr(ix,iy,iz,loc,'grid',inOut,'only');
     $(idStr).css("fill-opacity","0");
     $(idStr).css("stroke-opacity","0");
     
@@ -240,7 +240,7 @@ function svgAnimateLoopDraw() {
         // Hide all the grid front elements below
         for (let ix = 0; ix < nx; ix++) { 
             for (let iy=iySelIn+filter_size; iy < ny; iy++) {
-                idsBottomLayerNew.push(getIdStr(ix,iy,nz-1,'front','grid','in'));
+                idsBottomLayerNew.push(getIdStr(ix,iy,nz-1,'front','grid','in','only'));
             }
         }
     }
@@ -355,38 +355,26 @@ function svgAnimateStop() {
     timeoutID = "";
 }
 
-function svgCreateStr(width, height, pathsGridIn, pathsSelIn, pathsGridOut, pathsSelOut) {
+function svgCreateStr(width, height, pathsGrid, pathsSel) {
     var svgStr = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n';
     svgStr += '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" viewBox="0 0 ' + String(width) + ' ' + String(height) + '">\n';
     
     // Bottom paths first
     idsBottomLayer.forEach(function(item, index, array) {
-        if (pathsGridIn.has(item)) {
-            svgStr += pathsGridIn.get(item).svgStr() + '\n';
-            pathsGridIn.delete(item);
-        } else if (pathsSelIn.has(item)) {
-            svgStr += pathsSelIn.get(item).svgStr() + '\n';
-            pathsSelIn.delete(item);
-        } else if (pathsGridOut.has(item)) {
-            svgStr += pathsGridOut.get(item).svgStr() + '\n';
-            pathsGridOut.delete(item);
-        } else if (pathsSelOut.has(item)) {
-            svgStr += pathsSelOut.get(item).svgStr() + '\n';
-            pathsSelOut.delete(item);
+        if (pathsGrid.has(item)) {
+            svgStr += pathsGrid.get(item).svgStr() + '\n';
+            pathsGrid.delete(item);
+        } else if (pathsSel.has(item)) {
+            svgStr += pathsSel.get(item).svgStr() + '\n';
+            pathsSel.delete(item);
         }
     });
 
     // Draw selection first, then grid on top
-    pathsSelIn.forEach(function(value,key) {
+    pathsSel.forEach(function(value,key) {
         svgStr += value.svgStr() + '\n';
     });
-    pathsSelOut.forEach(function(value,key) {
-        svgStr += value.svgStr() + '\n';
-    });
-    pathsGridIn.forEach(function(value,key) {
-        svgStr += value.svgStr() + '\n';
-    });
-    pathsGridOut.forEach(function(value,key) {
+    pathsGrid.forEach(function(value,key) {
         svgStr += value.svgStr() + '\n';
     });
     
@@ -395,11 +383,11 @@ function svgCreateStr(width, height, pathsGridIn, pathsSelIn, pathsGridOut, path
     return svgStr;
 }
 
-function getIdStr(ix, iy, iz, loc, obj, inOut) {
-    return String(ix).padStart(3, '0') + '_' + String(iy).padStart(3, '0') + '_' + String(iz).padStart(3, '0') + '_' + inOut + '_' + loc + '_' + obj;
+function getIdStr(ix, iy, iz, loc, obj, inOut, cubeId) {
+    return String(ix).padStart(3, '0') + '_' + String(iy).padStart(3, '0') + '_' + String(iz).padStart(3, '0') + '_' + inOut + '_' + loc + '_' + obj + '_' + cubeId;
 }
 
-function svgDrawGrid(nx, ny, nz, face, w_top_left_canvas, h_top_left_canvas, inOut) {
+function svgDrawGrid(nxDraw, nyDraw, nzDraw, face, w_top_left_canvas, h_top_left_canvas, inOut, cubeId, iyStartForId, izStartForId) {
     const paths = new Map();
 
     let isGrid = true;
@@ -407,27 +395,27 @@ function svgDrawGrid(nx, ny, nz, face, w_top_left_canvas, h_top_left_canvas, inO
 
     // Top
     let iy_level = 0;
-    for (let ix = 0; ix < nx; ix++) { 
-        for (let iz = 0; iz < nz; iz++) {
-            idStr = getIdStr(ix,iy_level,iz,'top','grid',inOut);
+    for (let ix = 0; ix < nxDraw; ix++) { 
+        for (let iz = 0; iz < nzDraw; iz++) {
+            idStr = getIdStr(ix,iyStartForId + iy_level,izStartForId + iz,'top','grid',inOut,cubeId);
             paths.set(idStr, drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy_level, iz, face, isGrid));
         }
     }
 
     // Left
     let ix_level = 0;
-    for (let iy = 0; iy < ny; iy++) { 
-        for (let iz = 0; iz < nz; iz++) {
-            idStr = getIdStr(ix_level,iy,iz,'left','grid',inOut);
+    for (let iy = 0; iy < nyDraw; iy++) { 
+        for (let iz = 0; iz < nzDraw; iz++) {
+            idStr = getIdStr(ix_level,iyStartForId + iy,izStartForId + iz,'left','grid',inOut,cubeId);
             paths.set(idStr, drawFaceLeft(idStr, w_top_left_canvas, h_top_left_canvas, ix_level, iy, iz, face, isGrid));
         }
     }
 
     // Front
-    let iz_level =  nz - 1;
-    for (let ix = 0; ix < nx; ix++) { 
-        for (let iy = 0; iy < ny; iy++) { 
-            idStr = getIdStr(ix,iy,iz_level,'front','grid',inOut);
+    let iz_level = nzDraw - 1;
+    for (let ix = 0; ix < nxDraw; ix++) { 
+        for (let iy = 0; iy < nyDraw; iy++) { 
+            idStr = getIdStr(ix,iyStartForId + iy,izStartForId + iz_level,'front','grid',inOut,cubeId);
             paths.set(idStr, drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz_level, face, isGrid));
         }
     }
@@ -444,13 +432,13 @@ function svgDrawSel(nx, ny, nz, n_pad_end, face, w_top_left_canvas, h_top_left_c
     for (let ix = 0; ix < nx; ix++) { 
         for (let iy = 0; iy < ny+n_pad_end; iy++) { 
             for (let iz = 0; iz < nz+n_pad_end; iz++) {
-                idStr = getIdStr(ix,iy,iz,'top','sel',inOut);
+                idStr = getIdStr(ix,iy,iz,'top','sel',inOut,'only');
                 paths.set(idStr, drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid));
                 
-                idStr = getIdStr(ix,iy,iz,'left','sel',inOut);
+                idStr = getIdStr(ix,iy,iz,'left','sel',inOut,'only');
                 paths.set(idStr, drawFaceLeft(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid));
                 
-                idStr = getIdStr(ix,iy,iz,'front','sel',inOut);
+                idStr = getIdStr(ix,iy,iz,'front','sel',inOut,'only');
                 paths.set(idStr, drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid));
             }
         }
@@ -462,7 +450,7 @@ function svgDrawSel(nx, ny, nz, n_pad_end, face, w_top_left_canvas, h_top_left_c
 function svgDraw() {
 
     // Draw input
-    let pathsGridIn = svgDrawGrid(nx, ny, nz, face, w_top_left_canvas, h_top_left_canvas, 'in');
+    let pathsGridIn = svgDrawGrid(nx, ny, nz, face, w_top_left_canvas, h_top_left_canvas, 'in', 'only', 0, 0);
     let pathsSelIn = svgDrawSel(nx, ny, nz, n_pad_end, face, w_top_left_canvas, h_top_left_canvas, 'in');
 
     // Draw output
@@ -471,10 +459,50 @@ function svgDraw() {
     let nxOut = nFilters;
     let nPadEndOut = 0;
 
-    let pathsGridOut = svgDrawGrid(nxOut, nyOut, nzOut, face, w_top_left_canvas+500, h_top_left_canvas, 'out');
+    let pathsGridOut = svgDrawGrid(nxOut, nyOut, nzOut, face, w_top_left_canvas+500, h_top_left_canvas, 'out', 'only', 0, 0);
     let pathsSelOut = svgDrawSel(nxOut, nyOut, nzOut, nPadEndOut, face, w_top_left_canvas+500, h_top_left_canvas, 'out');
 
     // Draw
-    let svgStr = svgCreateStr(1000,800,pathsGridIn,pathsSelIn,pathsGridOut,pathsSelOut);
+    let pathsGrid = new Map([pathsGridIn, pathsGridOut]);
+    let pathsSel = new Map([pathsSelIn, pathsSelOut]);
+    let svgStr = svgCreateStr(1000,800,pathsGrid,pathsSel);
+    $('#ccSVG').html(svgStr);
+}
+
+let nySub = 3;
+let nzSub = 3;
+
+function svgDraw4() {
+    // Draw input grids
+    var iyStartForId = 0;
+    var izStartForId = 0;
+    let pathsGridInTL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas, h_top_left_canvas, 'in', 'TL', iyStartForId, izStartForId);
+    
+    let delta_Right_w = (nzSub+6)*face.w_translate;
+    let delta_Right_h = (nzSub+6)*face.h_translate;
+    let delta_Down_w = 0;
+    let delta_Down_h = nzSub*face.h_translate + (nySub+1)*face.box_dim;
+
+    var w_top_left_canvas_sub = w_top_left_canvas + delta_Right_w;
+    var h_top_left_canvas_sub = h_top_left_canvas + delta_Right_h;
+    iyStartForId = 0;
+    izStartForId = nz - nzSub;
+    let pathsGridInTR = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', 'TR', iyStartForId, izStartForId);
+
+    w_top_left_canvas_sub = w_top_left_canvas + delta_Down_w;
+    h_top_left_canvas_sub = h_top_left_canvas + delta_Down_h;
+    iyStartForId = ny - nySub;
+    izStartForId = 0;
+    let pathsGridInBL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', 'BL', iyStartForId, izStartForId);
+
+    w_top_left_canvas_sub = w_top_left_canvas + delta_Down_w + delta_Right_w;
+    h_top_left_canvas_sub = h_top_left_canvas + delta_Down_h + delta_Right_h;
+    iyStartForId = ny - nySub;
+    izStartForId = nz - nzSub;
+    let pathsGridInBR = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', 'BR', iyStartForId, izStartForId);
+
+    // Draw
+    let pathsGrid = new Map(function*() { yield* pathsGridInTL; yield* pathsGridInTR; yield* pathsGridInBL; yield* pathsGridInBR; }());
+    let svgStr = svgCreateStr(1000,800,pathsGrid,new Map());
     $('#ccSVG').html(svgStr);
 }
