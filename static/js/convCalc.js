@@ -86,8 +86,10 @@ var nyIn = 9;
 var nzIn = 9;
 
 let padding = 0;
-var ny = nyIn + padding;
-var nz = nzIn + padding;
+let nFilters = 2;
+
+var ny = nyIn + 2*padding;
+var nz = nzIn + 2*padding;
 
 var filterSize = 1;
 let stride = 2;
@@ -103,12 +105,17 @@ let faceDx = 28;
 let faceDy = 15;
 var face = new Face(faceDx, faceDy, faceBoxDim);
 
-let nPadEnd = 1;
+let nzOut = Math.ceil((nz - filterSize + 2*padding)/stride + 1);
+let nyOut = Math.ceil((ny - filterSize + 2*padding)/stride + 1);
+let nxOut = nFilters;
+
+var nyInCalculatedFromNyOut = stride*nyOut + padding;
+var nzInCalculatedFromNyOut = stride*nzOut + padding;
+var nyPadEndIn = nyInCalculatedFromNyOut - ny;
+var nzPadEndIn = nzInCalculatedFromNyOut - nz;
 
 let w_top_left_canvas = 100;
 let h_top_left_canvas = 100;
-
-let nFilters = 2;
 
 var ixSelOut = 0;
 var iySelOut = 0;
@@ -118,10 +125,6 @@ var selected = [];
 var gridHidden = [];
 
 var idsBottomLayer = [];
-
-let nzOut = Math.ceil((nz - filterSize + 2*padding)/stride + 1);
-let nyOut = Math.ceil((ny - filterSize + 2*padding)/stride + 1);
-let nxOut = nFilters;
 
 function updateParams() {
     nxNew = parseInt($("#ccnx").val());
@@ -163,6 +166,12 @@ function updateParams() {
     nzOut = Math.ceil((nz - filterSize + 2*padding)/stride + 1);
     nyOut = Math.ceil((ny - filterSize + 2*padding)/stride + 1);
     nxOut = nFilters;
+
+    // Calculate padding on input
+    nyInCalculatedFromNyOut = stride*nyOut + padding;
+    nzInCalculatedFromNyOut = stride*nzOut + padding;
+    nyPadEndIn = nyInCalculatedFromNyOut - ny;
+    nzPadEndIn = nzInCalculatedFromNyOut - nz;
 
     // Redraw
     svgDraw();
@@ -610,7 +619,7 @@ function svgDraw1() {
     let izStartForId = 0;
     let pathsGridIn = svgDrawGrid(nx, ny, nz, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId, 
         paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
-    let pathsSelIn = svgDrawSel(nx, ny, nz, nPadEnd, nPadEnd, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
+    let pathsSelIn = svgDrawSel(nx, ny, nz, nyPadEndIn, nzPadEndIn, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
 
     // Draw output
     paddingyTop = 0;
@@ -664,7 +673,7 @@ function svgDraw4() {
     iyStartForId = 0;
     izStartForId = nz - nzSub;
     nyPadEnd = 0;
-    nzPadEnd = nPadEnd;
+    nzPadEnd = nzPadEndIn;
     let pathsGridInTR = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId,
         paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
     let pathsSelInTR = svgDrawSel(nx, nySub, nzSub, nyPadEnd, nzPadEnd, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
@@ -679,7 +688,7 @@ function svgDraw4() {
     h_top_left_canvas_sub = h_top_left_canvas + delta_Down_h;
     iyStartForId = ny - nySub;
     izStartForId = 0;
-    nyPadEnd = nPadEnd;
+    nyPadEnd = nyPadEndIn;
     nzPadEnd = 0;
     let pathsGridInBL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId,
         paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
@@ -695,8 +704,8 @@ function svgDraw4() {
     h_top_left_canvas_sub = h_top_left_canvas + delta_Down_h + delta_Right_h;
     iyStartForId = ny - nySub;
     izStartForId = nz - nzSub;
-    nyPadEnd = nPadEnd;
-    nzPadEnd = nPadEnd;
+    nyPadEnd = nyPadEndIn;
+    nzPadEnd = nzPadEndIn;
     let pathsGridInBR = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId,
         paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
     let pathsSelInBR = svgDrawSel(nx, nySub, nzSub, nyPadEnd, nzPadEnd, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
@@ -712,10 +721,12 @@ function svgDraw2vert() {
     console.log("drawing 2 vertical");
 
     // Draw input grids
+    var nyPadEnd = 0;
+    var nzPadEnd = nzPadEndIn;
     var iyStartForId = 0;
     var izStartForId = 0;
     let pathsGridInTL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
-    let pathsSelInTL = svgDrawSel(nx, nySub, nzSub, 0, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
+    let pathsSelInTL = svgDrawSel(nx, nySub, nzSub, nyPadEnd, nzPadEnd, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
 
     let delta_Down_w = 0;
     let delta_Down_h = nzSub*face.h_translate + (nySub+1)*face.box_dim;
@@ -724,8 +735,10 @@ function svgDraw2vert() {
     h_top_left_canvas_sub = h_top_left_canvas + delta_Down_h;
     iyStartForId = ny - nySub;
     izStartForId = 0;
+    nyPadEnd = nyPadEndIn;
+    nzPadEnd = nzPadEndIn;
     let pathsGridInBL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
-    let pathsSelInBL = svgDrawSel(nx, nySub, nzSub, nPadEnd, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
+    let pathsSelInBL = svgDrawSel(nx, nySub, nzSub, nyPadEnd, nzPadEnd, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
 
     // Draw
     let pathsGrid = new Map(function*() { yield* pathsGridInTL; yield* pathsGridInBL; }());
@@ -739,10 +752,12 @@ function svgDraw2horiz() {
     console.log("drawing 2 horizontal");
 
     // Draw input grids
+    var nyPadEnd = nyPadEndIn;
+    var nzPadEnd = 0;
     var iyStartForId = 0;
     var izStartForId = 0;
     let pathsGridInTL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
-    let pathsSelInTL = svgDrawSel(nx, nySub, nzSub, 0, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
+    let pathsSelInTL = svgDrawSel(nx, nySub, nzSub, nyPadEnd, nzPadEnd, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
 
     let delta_Right_w = (nzSub+nzSep)*face.w_translate;
     let delta_Right_h = (nzSub+nzSep)*face.h_translate;
@@ -751,8 +766,10 @@ function svgDraw2horiz() {
     var h_top_left_canvas_sub = h_top_left_canvas + delta_Right_h;
     iyStartForId = 0;
     izStartForId = nz - nzSub;
+    nyPadEnd = nyPadEndIn;
+    nzPadEnd = nzPadEndIn;
     let pathsGridInTR = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
-    let pathsSelInTR = svgDrawSel(nx, nySub, nzSub, nPadEnd, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
+    let pathsSelInTR = svgDrawSel(nx, nySub, nzSub, nyPadEnd, nzPadEnd, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
 
     // Draw
     let pathsGrid = new Map(function*() { yield* pathsGridInTL; yield* pathsGridInTR; }());
