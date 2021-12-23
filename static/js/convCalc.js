@@ -245,6 +245,32 @@ function svgAnimateStart() {
     svgAnimateLoop();
 }
 
+function svgIncrementSelz() {
+    let nzOut = Math.ceil((nz - filterSize + 2*padding)/stride + 1);
+
+    izSelOut += 1;
+    if (nzOut > 4) {
+        // Break in z direction
+        // Only allowed indexes are 0,1 or nzOut-2, nzOut-1
+        if ((izSelOut > 1) && (izSelOut < nzOut-2)) {
+            izSelOut = nzOut-2;
+        } 
+    }
+}
+
+function svgIncrementSely() {
+    let nyOut = Math.ceil((ny - filterSize + 2*padding)/stride + 1);
+
+    iySelOut += 1;
+    if (nyOut > 4) {
+        // Break in y direction
+        // Only allowed indexes are 0,1 or nyOut-2, nyOut-1
+        if ((iySelOut > 1) && (iySelOut < nyOut-2)) {
+            iySelOut = nyOut-2;
+        } 
+    }
+}
+
 function svgAnimateLoopIncrement() {
     // Output dimensions
     let nzOut = Math.ceil((nz - filterSize + 2*padding)/stride + 1);
@@ -252,12 +278,12 @@ function svgAnimateLoopIncrement() {
     let nxOut = nFilters;
 
     // Next in z direction
-    izSelOut += 1;
+    svgIncrementSelz();
 
     // Check in bounds
     if (izSelOut >= nzOut) {
         // Next in y direction
-        iySelOut += 1;
+        svgIncrementSely();
         izSelOut = 0;
     }
     if (iySelOut >= nyOut) {
