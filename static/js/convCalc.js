@@ -67,7 +67,7 @@ var nx = 3;
 var ny = 9;
 var nz = 9;
 
-function updateNxNyNz() {
+function updateParams() {
     nxNew = parseInt($("#ccnx").val());
     if (!isNaN(nxNew)) {
         nx = nxNew;
@@ -85,6 +85,19 @@ function updateNxNyNz() {
 
     console.log("Changed to: ", nx, ny, nz);
 
+    // Adjust face dimensions to ensure cubes will not overlap
+    faceDx = (nx * faceBoxDim + wSep) / nzSep;
+    face = new Face(faceDx, faceDy, faceBoxDim);
+
+    filterSizeNew = parseInt($("#ccfilterSize").val());
+    if (!isNaN(filterSizeNew)) {
+        filterSize = filterSizeNew;
+    }
+
+    nySub = Math.min(ny,stride + filterSize + 1);
+    nzSub = Math.min(nz,stride + filterSize + 1);
+    console.log("Changed to nySub, nzSub = ", nySub, nzSub);
+
     // Redraw
     svgDraw();
 }
@@ -95,23 +108,16 @@ let stride = 2;
 var nySub = stride + filterSize + 1;
 var nzSub = stride + filterSize + 1;
 
-function updateParams() {
-    filterSizeNew = parseInt($("#ccfilterSize").val());
-    if (!isNaN(filterSizeNew)) {
-        filterSize = filterSizeNew;
-    }
+let nzSep = 6;
+let wSep = 20;
 
-    nySub = stride + filterSize + 1;
-    nzSub = stride + filterSize + 1;
-    console.log("Changed to nySub, nzSub = ", nySub, nzSub);
-
-    // Redraw
-    svgDraw();
-}
+let faceBoxDim = 50;
+let faceDx = 28;
+let faceDy = 15;
+var face = new Face(faceDx, faceDy, faceBoxDim);
 
 let nPadEnd = 1;
 
-let face = new Face(28, 15, 50);
 let w_top_left_canvas = 100;
 let h_top_left_canvas = 100;
 
@@ -490,11 +496,17 @@ function svgDrawSel(nxDraw, nyDraw, nzDraw, nPadEndDraw, face, w_top_left_canvas
 
 function svgDraw() {
     // Check how many pieces to draw
-    if (2*nzSub > nz) {
+    if ((2*nzSub > nz) && (2*nySub > ny)) {
         // Only draw one
         svgDraw1();
+    } else if (2*nzSub > nz) {
+        // Only draw vertical
+        svgDraw2vert();
+    } else if (2*nySub > ny) {
+        // Only draw horizontal
+        svgDraw2horiz();
     } else {
-        // Draw pieces
+        // Draw all 4 pieces
         svgDraw4();
     }
 }
@@ -535,8 +547,8 @@ function svgDraw4() {
     let pathsGridInTL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
     let pathsSelInTL = svgDrawSel(nx, nySub, nzSub, 0, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
 
-    let delta_Right_w = (nzSub+6)*face.w_translate;
-    let delta_Right_h = (nzSub+6)*face.h_translate;
+    let delta_Right_w = (nzSub+nzSep)*face.w_translate;
+    let delta_Right_h = (nzSub+nzSep)*face.h_translate;
     let delta_Down_w = 0;
     let delta_Down_h = nzSub*face.h_translate + (nySub+1)*face.box_dim;
 
@@ -564,6 +576,59 @@ function svgDraw4() {
     // Draw
     let pathsGrid = new Map(function*() { yield* pathsGridInTL; yield* pathsGridInTR; yield* pathsGridInBL; yield* pathsGridInBR; }());
     let pathsSel = new Map(function*() { yield* pathsSelInTL; yield* pathsSelInTR; yield* pathsSelInBL; yield* pathsSelInBR; }());
+    let svgStr = svgCreateStr(1000,800,pathsGrid,pathsSel);
+    $('#ccSVG').html(svgStr);
+}
+
+function svgDraw2vert() {
+    console.log("drawing 2 vertical");
+
+    // Draw input grids
+    var iyStartForId = 0;
+    var izStartForId = 0;
+    let pathsGridInTL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
+    let pathsSelInTL = svgDrawSel(nx, nySub, nzSub, 0, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
+
+    let delta_Down_w = 0;
+    let delta_Down_h = nzSub*face.h_translate + (nySub+1)*face.box_dim;
+
+    w_top_left_canvas_sub = w_top_left_canvas + delta_Down_w;
+    h_top_left_canvas_sub = h_top_left_canvas + delta_Down_h;
+    iyStartForId = ny - nySub;
+    izStartForId = 0;
+    let pathsGridInBL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
+    let pathsSelInBL = svgDrawSel(nx, nySub, nzSub, nPadEnd, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
+
+    // Draw
+    let pathsGrid = new Map(function*() { yield* pathsGridInTL; yield* pathsGridInBL; }());
+    let pathsSel = new Map(function*() { yield* pathsSelInTL; yield* pathsSelInBL; }());
+    let svgStr = svgCreateStr(1000,800,pathsGrid,pathsSel);
+    $('#ccSVG').html(svgStr);
+}
+
+
+function svgDraw2horiz() {
+    console.log("drawing 2 horizontal");
+
+    // Draw input grids
+    var iyStartForId = 0;
+    var izStartForId = 0;
+    let pathsGridInTL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
+    let pathsSelInTL = svgDrawSel(nx, nySub, nzSub, 0, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
+
+    let delta_Right_w = (nzSub+nzSep)*face.w_translate;
+    let delta_Right_h = (nzSub+nzSep)*face.h_translate;
+
+    var w_top_left_canvas_sub = w_top_left_canvas + delta_Right_w;
+    var h_top_left_canvas_sub = h_top_left_canvas + delta_Right_h;
+    iyStartForId = 0;
+    izStartForId = nz - nzSub;
+    let pathsGridInTR = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
+    let pathsSelInTR = svgDrawSel(nx, nySub, nzSub, nPadEnd, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
+
+    // Draw
+    let pathsGrid = new Map(function*() { yield* pathsGridInTL; yield* pathsGridInTR; }());
+    let pathsSel = new Map(function*() { yield* pathsSelInTL; yield* pathsSelInTR; }());
     let svgStr = svgCreateStr(1000,800,pathsGrid,pathsSel);
     $('#ccSVG').html(svgStr);
 }
