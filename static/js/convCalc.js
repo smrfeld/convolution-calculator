@@ -166,7 +166,7 @@ function drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, 
 }
 
 function svgSelect(ix, iy, iz, loc, inOut, iFilter, isValid) {
-    var idStr = '#' + getIdStr(ix,iy,iz,loc,'sel',inOut,'only');
+    var idStr = '#' + getIdStr(ix,iy,iz,loc,'sel',inOut);
 
     // Turn opacity on
     $(idStr).css("fill-opacity",selFillOpacity);
@@ -184,7 +184,7 @@ function svgSelect(ix, iy, iz, loc, inOut, iFilter, isValid) {
 }
 
 function svgGridHide(ix, iy, iz, loc, inOut) {
-    var idStr = '#' + getIdStr(ix,iy,iz,loc,'grid',inOut,'only');
+    var idStr = '#' + getIdStr(ix,iy,iz,loc,'grid',inOut);
     $(idStr).css("fill-opacity","0");
     $(idStr).css("stroke-opacity","0");
     
@@ -240,7 +240,7 @@ function svgAnimateLoopDraw() {
         // Hide all the grid front elements below
         for (let ix = 0; ix < nx; ix++) { 
             for (let iy=iySelIn+filter_size; iy < ny; iy++) {
-                idsBottomLayerNew.push(getIdStr(ix,iy,nz-1,'front','grid','in','only'));
+                idsBottomLayerNew.push(getIdStr(ix,iy,nz-1,'front','grid','in'));
             }
         }
     }
@@ -383,11 +383,11 @@ function svgCreateStr(width, height, pathsGrid, pathsSel) {
     return svgStr;
 }
 
-function getIdStr(ix, iy, iz, loc, obj, inOut, cubeId) {
-    return String(ix).padStart(3, '0') + '_' + String(iy).padStart(3, '0') + '_' + String(iz).padStart(3, '0') + '_' + inOut + '_' + loc + '_' + obj + '_' + cubeId;
+function getIdStr(ix, iy, iz, loc, obj, inOut) {
+    return String(ix).padStart(3, '0') + '_' + String(iy).padStart(3, '0') + '_' + String(iz).padStart(3, '0') + '_' + inOut + '_' + loc + '_' + obj;
 }
 
-function svgDrawGrid(nxDraw, nyDraw, nzDraw, face, w_top_left_canvas, h_top_left_canvas, inOut, cubeId, iyStartForId, izStartForId) {
+function svgDrawGrid(nxDraw, nyDraw, nzDraw, face, w_top_left_canvas, h_top_left_canvas, inOut, iyStartForId, izStartForId) {
     const paths = new Map();
 
     let isGrid = true;
@@ -397,7 +397,7 @@ function svgDrawGrid(nxDraw, nyDraw, nzDraw, face, w_top_left_canvas, h_top_left
     let iy_level = 0;
     for (let ix = 0; ix < nxDraw; ix++) { 
         for (let iz = 0; iz < nzDraw; iz++) {
-            idStr = getIdStr(ix,iyStartForId + iy_level,izStartForId + iz,'top','grid',inOut,cubeId);
+            idStr = getIdStr(ix,iyStartForId + iy_level,izStartForId + iz,'top','grid',inOut);
             paths.set(idStr, drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy_level, iz, face, isGrid));
         }
     }
@@ -406,7 +406,7 @@ function svgDrawGrid(nxDraw, nyDraw, nzDraw, face, w_top_left_canvas, h_top_left
     let ix_level = 0;
     for (let iy = 0; iy < nyDraw; iy++) { 
         for (let iz = 0; iz < nzDraw; iz++) {
-            idStr = getIdStr(ix_level,iyStartForId + iy,izStartForId + iz,'left','grid',inOut,cubeId);
+            idStr = getIdStr(ix_level,iyStartForId + iy,izStartForId + iz,'left','grid',inOut);
             paths.set(idStr, drawFaceLeft(idStr, w_top_left_canvas, h_top_left_canvas, ix_level, iy, iz, face, isGrid));
         }
     }
@@ -415,7 +415,7 @@ function svgDrawGrid(nxDraw, nyDraw, nzDraw, face, w_top_left_canvas, h_top_left
     let iz_level = nzDraw - 1;
     for (let ix = 0; ix < nxDraw; ix++) { 
         for (let iy = 0; iy < nyDraw; iy++) { 
-            idStr = getIdStr(ix,iyStartForId + iy,izStartForId + iz_level,'front','grid',inOut,cubeId);
+            idStr = getIdStr(ix,iyStartForId + iy,izStartForId + iz_level,'front','grid',inOut);
             paths.set(idStr, drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz_level, face, isGrid));
         }
     }
@@ -432,13 +432,13 @@ function svgDrawSel(nx, ny, nz, n_pad_end, face, w_top_left_canvas, h_top_left_c
     for (let ix = 0; ix < nx; ix++) { 
         for (let iy = 0; iy < ny+n_pad_end; iy++) { 
             for (let iz = 0; iz < nz+n_pad_end; iz++) {
-                idStr = getIdStr(ix,iy,iz,'top','sel',inOut,'only');
+                idStr = getIdStr(ix,iy,iz,'top','sel',inOut);
                 paths.set(idStr, drawFaceTop(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid));
                 
-                idStr = getIdStr(ix,iy,iz,'left','sel',inOut,'only');
+                idStr = getIdStr(ix,iy,iz,'left','sel',inOut);
                 paths.set(idStr, drawFaceLeft(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid));
                 
-                idStr = getIdStr(ix,iy,iz,'front','sel',inOut,'only');
+                idStr = getIdStr(ix,iy,iz,'front','sel',inOut);
                 paths.set(idStr, drawFaceFront(idStr, w_top_left_canvas, h_top_left_canvas, ix, iy, iz, face, isGrid));
             }
         }
@@ -450,7 +450,7 @@ function svgDrawSel(nx, ny, nz, n_pad_end, face, w_top_left_canvas, h_top_left_c
 function svgDraw() {
 
     // Draw input
-    let pathsGridIn = svgDrawGrid(nx, ny, nz, face, w_top_left_canvas, h_top_left_canvas, 'in', 'only', 0, 0);
+    let pathsGridIn = svgDrawGrid(nx, ny, nz, face, w_top_left_canvas, h_top_left_canvas, 'in', 0, 0);
     let pathsSelIn = svgDrawSel(nx, ny, nz, n_pad_end, face, w_top_left_canvas, h_top_left_canvas, 'in');
 
     // Draw output
@@ -459,7 +459,7 @@ function svgDraw() {
     let nxOut = nFilters;
     let nPadEndOut = 0;
 
-    let pathsGridOut = svgDrawGrid(nxOut, nyOut, nzOut, face, w_top_left_canvas+500, h_top_left_canvas, 'out', 'only', 0, 0);
+    let pathsGridOut = svgDrawGrid(nxOut, nyOut, nzOut, face, w_top_left_canvas+500, h_top_left_canvas, 'out', 0, 0);
     let pathsSelOut = svgDrawSel(nxOut, nyOut, nzOut, nPadEndOut, face, w_top_left_canvas+500, h_top_left_canvas, 'out');
 
     // Draw
@@ -476,7 +476,7 @@ function svgDraw4() {
     // Draw input grids
     var iyStartForId = 0;
     var izStartForId = 0;
-    let pathsGridInTL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas, h_top_left_canvas, 'in', 'TL', iyStartForId, izStartForId);
+    let pathsGridInTL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas, h_top_left_canvas, 'in', iyStartForId, izStartForId);
     
     let delta_Right_w = (nzSub+6)*face.w_translate;
     let delta_Right_h = (nzSub+6)*face.h_translate;
@@ -487,19 +487,19 @@ function svgDraw4() {
     var h_top_left_canvas_sub = h_top_left_canvas + delta_Right_h;
     iyStartForId = 0;
     izStartForId = nz - nzSub;
-    let pathsGridInTR = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', 'TR', iyStartForId, izStartForId);
+    let pathsGridInTR = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
 
     w_top_left_canvas_sub = w_top_left_canvas + delta_Down_w;
     h_top_left_canvas_sub = h_top_left_canvas + delta_Down_h;
     iyStartForId = ny - nySub;
     izStartForId = 0;
-    let pathsGridInBL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', 'BL', iyStartForId, izStartForId);
+    let pathsGridInBL = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
 
     w_top_left_canvas_sub = w_top_left_canvas + delta_Down_w + delta_Right_w;
     h_top_left_canvas_sub = h_top_left_canvas + delta_Down_h + delta_Right_h;
     iyStartForId = ny - nySub;
     izStartForId = nz - nzSub;
-    let pathsGridInBR = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', 'BR', iyStartForId, izStartForId);
+    let pathsGridInBR = svgDrawGrid(nx, nySub, nzSub, face, w_top_left_canvas_sub, h_top_left_canvas_sub, 'in', iyStartForId, izStartForId);
 
     // Draw
     let pathsGrid = new Map(function*() { yield* pathsGridInTL; yield* pathsGridInTR; yield* pathsGridInBL; yield* pathsGridInBR; }());
