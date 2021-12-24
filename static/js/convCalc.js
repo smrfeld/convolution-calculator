@@ -323,6 +323,13 @@ class DrawingSelections {
                 if (izFront >= p.nzIn-1) {
                     this.svgGridHide(ix, iy, p.nzIn-1, 'front', 'in');
                 }
+
+                // Hide if front face of left cube
+                if (p.splitZdir) {
+                    if (izFront == p.nzInSubcube-1) {
+                        this.svgGridHide(ix, iy, p.nzInSubcube-1, 'front', 'in');
+                    }
+                }
             }
         }
     
@@ -336,7 +343,12 @@ class DrawingSelections {
         }
     
         if (p.izSelOut == p.nzOut-1) {
-            this.svgGridHide(p.ixSelOut, p.iySelOut, p.nzOut-1, 'front', 'out');
+            this.svgGridHide(p.ixSelOut, p.iySelOut, p.izSelOut, 'front', 'out');
+        }
+        if (p.splitZdir) {
+            if (p.izSelOut == p.nzOutSubcube-1) {
+                this.svgGridHide(p.ixSelOut, p.iySelOut, p.izSelOut, 'front', 'out');
+            }
         }
     
         if (p.iySelOut == 0) {
@@ -424,12 +436,17 @@ function updateParams() {
     if (p.stride > p.filterSize) {
         errs += "Stride is larger than the filter size => data in the input is skipped.\n";
     }
-    let nyOutTheory = (p.nyIn - p.filterSize + 2*p.padding)/p.stride + 1;
+    
+    if (p.padding >= p.filterSize) {
+        errs += "Padding is greater or equal to filter size => some filters are not covering any data at all, only padding.\n"
+    }
+
     let nzOutTheory = (p.nzIn - p.filterSize + 2*p.padding)/p.stride + 1;
-    console.log(nyOutTheory);
     if (!Number.isInteger(nzOutTheory)) {
         errs += "Filter does not evenly cover data in horizontal direction.\n";
     }
+
+    let nyOutTheory = (p.nyIn - p.filterSize + 2*p.padding)/p.stride + 1;
     if (!Number.isInteger(nyOutTheory)) {
         errs += "Filter does not evenly cover data in vertical direction.\n";
     }
