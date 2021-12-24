@@ -134,8 +134,8 @@ class Params {
         // Output dimensions
         this.nyOutTheory = (this.nyInput - this.filterSize + 2*this.padding)/this.stride + 1;
         this.nzOutTheory = (this.nzInput - this.filterSize + 2*this.padding)/this.stride + 1;
-        this.nzOut = Math.ceil(this.nyOutTheory);
-        this.nyOut = Math.ceil(this.nzOutTheory);
+        this.nyOut = Math.ceil(this.nyOutTheory);
+        this.nzOut = Math.ceil(this.nzOutTheory);
         this.nxOut = this.nFilters;
 
         // If nyOut > 4, split ny, same for z
@@ -160,26 +160,25 @@ class Params {
         // Drawing parameters
         this.wTopLeftCanvas = 100;
         this.hTopLeftCanvas = 100;
-    }
-    
-    /*
-    checkHowManyPieces() {
-        // Check how many pieces to draw
-        if ((2*this.nzInSubcube >= this.nzIn) && (2*this.nyInSubcube >= this.nyIn)) {
-            // Only draw one
-            return "one";
-        } else if (2*this.nzInSubcube >= this.nzIn) {
-            // Only draw vertical
-            return "twoVertical";
-        } else if (2*this.nyInSubcube >= this.nyIn) {
-            // Only draw horizontal
-            return "twoHorizontal";
-        } else {
-            // Draw all 4 pieces
-            return "four";
+
+        // Padding planes
+        this.paddingPlanesConstYIn = [];
+        this.paddingPlanesConstZIn = [];
+        this.paddingPlanesConstYOut = []; // never padded
+        this.paddingPlanesConstZOut = []; // never padded
+        for (let iy = 0; iy < this.padding; iy++) { 
+            this.paddingPlanesConstYIn.push(iy);
+        }
+        for (let iy = this.nyIn - this.padding; iy < this.nyIn; iy++) {
+            this.paddingPlanesConstYIn.push(iy);
+        }
+        for (let iz = 0; iz < this.padding; iz++) { 
+            this.paddingPlanesConstZIn.push(iz);
+        }
+        for (let iz = this.nzIn - this.padding; iz < this.nzIn; iz++) {
+            this.paddingPlanesConstZIn.push(iz);
         }
     }
-    */
 
     checkSelectionValid() {
         this.ixSelOut = Math.min(this.ixSelOut, this.nFilters-1);
@@ -653,7 +652,7 @@ function getIdStr(ix, iy, iz, loc, obj, inOut) {
         + inOut + '_' + loc + '_' + obj;
 }
 
-function createPaddingPlanes(nyDraw, nzDraw, paddingyTop, paddingyBottom, paddingzLeft, paddingzRight) {
+function createInvalidPlanes() {
     // Horizontal planes
     var consty = [];
     for (let iy = 0; iy < paddingyTop; iy++) { 
@@ -675,19 +674,23 @@ function createPaddingPlanes(nyDraw, nzDraw, paddingyTop, paddingyBottom, paddin
     return { consty, constz }
 }
 
-function svgDrawGrid(nxDraw, nyDraw, nzDraw, wTopLeftCanvas, hTopLeftCanvas, inOut, iyStartForId, izStartForId, paddingPlanes) {
+function svgDrawGrid(nxDraw, nyDraw, nzDraw, wTopLeftCanvas, hTopLeftCanvas, inOut, iyStartForId, izStartForId, paddingPlanesConstY, paddingPlanesConstZ) {
     const paths = new Map();
 
     let isGrid = true;
     var idStr = "";
     let isGridInvalid = false;
+    var iyGlobal = 0;
+    var izGlobal = 0;
 
     // Top
     let iyLevel = 0;
     for (let ix = 0; ix < nxDraw; ix++) { 
         for (let iz = 0; iz < nzDraw; iz++) {
-            idStr = getIdStr(ix,iyStartForId + iyLevel,izStartForId + iz,'top','grid',inOut);
-            if ((paddingPlanes.consty.includes(iyLevel)) || (paddingPlanes.constz.includes(iz))) {
+            iyGlobal = iyStartForId + iyLevel;
+            izGlobal = izStartForId + iz;
+            idStr = getIdStr(ix,iyGlobal, izGlobal,'top','grid',inOut);
+            if ((paddingPlanesConstY.includes(iyGlobal)) || (paddingPlanesConstZ.includes(izGlobal))) {
                 isPadding = true;
             } else {
                 isPadding = false;
@@ -700,8 +703,10 @@ function svgDrawGrid(nxDraw, nyDraw, nzDraw, wTopLeftCanvas, hTopLeftCanvas, inO
     let ixLevel = 0;
     for (let iy = 0; iy < nyDraw; iy++) { 
         for (let iz = 0; iz < nzDraw; iz++) {
-            idStr = getIdStr(ixLevel,iyStartForId + iy,izStartForId + iz,'left','grid',inOut);
-            if ((paddingPlanes.consty.includes(iy)) || (paddingPlanes.constz.includes(iz))) {
+            iyGlobal = iyStartForId + iy;
+            izGlobal = izStartForId + iz;
+            idStr = getIdStr(ixLevel,iyGlobal,izGlobal,'left','grid',inOut);
+            if ((paddingPlanesConstY.includes(iyGlobal)) || (paddingPlanesConstZ.includes(izGlobal))) {
                 isPadding = true;
             } else {
                 isPadding = false;
@@ -714,8 +719,10 @@ function svgDrawGrid(nxDraw, nyDraw, nzDraw, wTopLeftCanvas, hTopLeftCanvas, inO
     let izLevel = nzDraw - 1;
     for (let ix = 0; ix < nxDraw; ix++) { 
         for (let iy = 0; iy < nyDraw; iy++) { 
-            idStr = getIdStr(ix,iyStartForId + iy,izStartForId + izLevel,'front','grid',inOut);
-            if ((paddingPlanes.consty.includes(iy)) || (paddingPlanes.constz.includes(izLevel))) {
+            iyGlobal = iyStartForId + iy;
+            izGlobal = izStartForId + izLevel;
+            idStr = getIdStr(ix,iyGlobal,izGlobal,'front','grid',inOut);
+            if ((paddingPlanesConstY.includes(iyGlobal)) || (paddingPlanesConstZ.includes(izGlobal))) {
                 isPadding = true;
             } else {
                 isPadding = false;
@@ -726,61 +733,6 @@ function svgDrawGrid(nxDraw, nyDraw, nzDraw, wTopLeftCanvas, hTopLeftCanvas, inO
 
     return paths;
 }
-
-/*
-function svgDrawGrid(nxDraw, nyDraw, nzDraw, wTopLeftCanvas, hTopLeftCanvas, inOut, iyStartForId, izStartForId, 
-    paddingyTop, paddingyBottom, paddingzLeft, paddingzRight) {
-    const paths = new Map();
-
-    let isGrid = true;
-    var idStr = "";
-    let isGridInvalid = false;
-
-    // Top
-    let iyLevel = 0;
-    for (let ix = 0; ix < nxDraw; ix++) { 
-        for (let iz = 0; iz < nzDraw; iz++) {
-            idStr = getIdStr(ix,iyStartForId + iyLevel,izStartForId + iz,'top','grid',inOut);
-            if ((paddingyTop > 0) || (iz < paddingzLeft) || (nzDraw-1 - paddingzRight < iz)) {
-                isPadding = true;
-            } else {
-                isPadding = false;
-            }
-            paths.set(idStr, drawFaceTop(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iyLevel, iz, isGrid, isGridInvalid, isPadding));
-        }
-    }
-
-    // Left
-    let ixLevel = 0;
-    for (let iy = 0; iy < nyDraw; iy++) { 
-        for (let iz = 0; iz < nzDraw; iz++) {
-            idStr = getIdStr(ixLevel,iyStartForId + iy,izStartForId + iz,'left','grid',inOut);
-            if ((iz < paddingzLeft) || (iy < paddingyTop) || (nzDraw-1 - paddingzRight < iz) || (nyDraw-1 - paddingyBottom < iy)) {
-                isPadding = true;
-            } else {
-                isPadding = false;
-            }
-            paths.set(idStr, drawFaceLeft(idStr, wTopLeftCanvas, hTopLeftCanvas, ixLevel, iy, iz, isGrid, isGridInvalid, isPadding));
-        }
-    }
-
-    // Front
-    let izLevel = nzDraw - 1;
-    for (let ix = 0; ix < nxDraw; ix++) { 
-        for (let iy = 0; iy < nyDraw; iy++) { 
-            idStr = getIdStr(ix,iyStartForId + iy,izStartForId + izLevel,'front','grid',inOut);
-            if ((paddingzRight > 0) || (iy < paddingyTop) || (nyDraw-1 - paddingyBottom < iy)) {
-                isPadding = true;
-            } else {
-                isPadding = false;
-            }
-            paths.set(idStr, drawFaceFront(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iy, izLevel, isGrid, isGridInvalid, isPadding));
-        }
-    }
-
-    return paths;
-}
-*/
 
 function svgDrawSel(nxDraw, nyDraw, nzDraw, nyPadSelEndInDraw, nzPadSelEndInDraw, wTopLeftCanvas, hTopLeftCanvas, inOut, iyStartForId, izStartForId) {
     const paths = new Map();
@@ -825,27 +777,16 @@ function svgDraw1(p) {
     console.log("drawing single");
 
     // Draw input
-    var paddingyTop = p.padding;
-    var paddingyBottom = p.padding;
-    var paddingzLeft = p.padding;
-    var paddingzRight = p.padding;
-    var paddingPlanes = createPaddingPlanes(p.nyIn, p.nzIn, paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
-    console.log(paddingPlanes);
-
     let iyStartForId = 0;
     let izStartForId = 0;
-    let pathsGridIn = svgDrawGrid(p.nx, p.nyIn, p.nzIn, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId, paddingPlanes);
+    let pathsGridIn = svgDrawGrid(p.nx, p.nyIn, p.nzIn, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId, 
+        p.paddingPlanesConstYIn, p.paddingPlanesConstZIn);
     let pathsSelIn = svgDrawSel(p.nx, p.nyIn, p.nzIn, p.nyPadSelEndIn, p.nzPadSelEndIn, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId);
 
     // Draw output
-    paddingyTop = 0;
-    paddingyBottom = 0;
-    paddingzLeft = 0;
-    paddingzRight = 0;
-    paddingPlanes = createPaddingPlanes(p.nyOut, p.nzOut, paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
-
     let nInHiddenPadDraw = 0;
-    let pathsGridOut = svgDrawGrid(p.nxOut, p.nyOut, p.nzOut, p.wTopLeftCanvas+500, p.hTopLeftCanvas, 'out', iyStartForId, izStartForId, paddingPlanes);
+    let pathsGridOut = svgDrawGrid(p.nxOut, p.nyOut, p.nzOut, p.wTopLeftCanvas+500, p.hTopLeftCanvas, 'out', iyStartForId, izStartForId,
+        p.paddingPlanesConstYOut, p.paddingPlanesConstZOut);
     let pathsSelOut = svgDrawSel(p.nxOut, p.nyOut, p.nzOut, nInHiddenPadDraw, nInHiddenPadDraw, p.wTopLeftCanvas+500, p.hTopLeftCanvas, 'out', iyStartForId, izStartForId);
 
     // Draw
@@ -863,7 +804,7 @@ function svgDraw4(p) {
         p.nyInSubcube, p.nzInSubcube,
         p.face,
         p.wTopLeftCanvas, p.hTopLeftCanvas,
-        p.padding,
+        p.paddingPlanesConstYIn, p.paddingPlanesConstZIn,
         p.nyPadSelEndIn, p.nzPadSelEndIn,
         p.leftRightSepSubcubes, p.topBottomSepSubcubes,
         'in'
@@ -873,7 +814,7 @@ function svgDraw4(p) {
         p.nyOutSubcube, p.nzOutSubcube,
         p.face,
         p.wTopLeftCanvas + 500, p.hTopLeftCanvas + 0,
-        p.paddingOut,
+        p.paddingPlanesConstYOut, p.paddingPlanesConstZOut,
         p.nyPadSelEndOut, p.nzPadSelEndOut,
         p.leftRightSepSubcubes, p.topBottomSepSubcubes,
         'out'
@@ -890,34 +831,23 @@ function svgDraw4InOut(
     nySubcube, nzSubcube, 
     face, 
     wTopLeftCanvas, hTopLeftCanvas, 
-    padding, 
+    paddingPlanesConstY, paddingPlanesConstZ, 
     nyPadSelEnd, nzPadSelEnd,
     leftRightSepSubcubes, topBottomSepSubcubes,
     inOut
     ) {
 
     // Top-left
-    var paddingyTop = padding;
-    var paddingyBottom = 0;
-    var paddingzLeft = padding;
-    var paddingzRight = 0;
-    var paddingPlanes = createPaddingPlanes(nySubcube, nzSubcube, paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
-
     var iyStartForId = 0;
     var izStartForId = 0;
     var nyPadSelEndUse = 0;
     var nzPadSelEndUse = 0;
-    let pathsGridInTL = svgDrawGrid(nx, nySubcube, nzSubcube, wTopLeftCanvas, hTopLeftCanvas, inOut, iyStartForId, izStartForId, paddingPlanes);
+    let pathsGridInTL = svgDrawGrid(nx, nySubcube, nzSubcube, wTopLeftCanvas, hTopLeftCanvas, inOut, iyStartForId, izStartForId, 
+        paddingPlanesConstY, paddingPlanesConstZ);
     let pathsSelInTL = svgDrawSel(nx, nySubcube, nzSubcube, nyPadSelEndUse, nzPadSelEndUse, wTopLeftCanvas, hTopLeftCanvas, 
         inOut, iyStartForId, izStartForId);
 
     // Top right
-    paddingyTop = padding;
-    paddingyBottom = 0;
-    paddingzLeft = 0;
-    paddingzRight = padding;
-    paddingPlanes = createPaddingPlanes(nySubcube, nzSubcube, paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
-
     let deltaRightW = nzSubcube*face.wTranslate + nx*face.boxDim + leftRightSepSubcubes;
     let deltaRightH = nzSubcube*face.hTranslate + (face.hTranslate/face.wTranslate)*(nx*face.boxDim + leftRightSepSubcubes);
 
@@ -927,7 +857,8 @@ function svgDraw4InOut(
     izStartForId = nz - nzSubcube;
     nyPadSelEndUse = 0;
     nzPadSelEndUse = nzPadSelEnd;
-    let pathsGridInTR = svgDrawGrid(nx, nySubcube, nzSubcube, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, inOut, iyStartForId, izStartForId, paddingPlanes);
+    let pathsGridInTR = svgDrawGrid(nx, nySubcube, nzSubcube, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, inOut, iyStartForId, izStartForId, 
+        paddingPlanesConstY, paddingPlanesConstZ);
     let pathsSelInTR = svgDrawSel(nx, nySubcube, nzSubcube, nyPadSelEndUse, nzPadSelEndUse, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 
         inOut, iyStartForId, izStartForId);
 
@@ -935,36 +866,26 @@ function svgDraw4InOut(
     let deltaDownW = 0;
     let deltaDownH = nySubcube*face.boxDim + nzSubcube*face.hTranslate + topBottomSepSubcubes;
 
-    paddingyTop = 0;
-    paddingyBottom = padding;
-    paddingzLeft = padding;
-    paddingzRight = 0;
-    paddingPlanes = createPaddingPlanes(nySubcube, nzSubcube, paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
-
     wTopLeftCanvasSubcube = wTopLeftCanvas + deltaDownW;
     hTopLeftCanvasSubcube = hTopLeftCanvas + deltaDownH;
     iyStartForId = ny - nySubcube;
     izStartForId = 0;
     nyPadSelEndUse = nyPadSelEnd;
     nzPadSelEndUse = 0;
-    let pathsGridInBL = svgDrawGrid(nx, nySubcube, nzSubcube, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, inOut, iyStartForId, izStartForId, paddingPlanes);
+    let pathsGridInBL = svgDrawGrid(nx, nySubcube, nzSubcube, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, inOut, iyStartForId, izStartForId, 
+        paddingPlanesConstY, paddingPlanesConstZ);
     let pathsSelInBL = svgDrawSel(nx, nySubcube, nzSubcube, nyPadSelEndUse, nzPadSelEndUse, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 
         inOut, iyStartForId, izStartForId);
 
     // Bottom-right
-    paddingyTop = 0;
-    paddingyBottom = padding;
-    paddingzLeft = 0;
-    paddingzRight = padding;
-    paddingPlanes = createPaddingPlanes(nySubcube, nzSubcube, paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
-
     wTopLeftCanvasSubcube = wTopLeftCanvas + deltaDownW + deltaRightW;
     hTopLeftCanvasSubcube = hTopLeftCanvas + deltaDownH + deltaRightH;
     iyStartForId = ny - nySubcube;
     izStartForId = nz - nzSubcube;
     nyPadSelEndUse = nyPadSelEnd;
     nzPadSelEndUse = nzPadSelEnd;
-    let pathsGridInBR = svgDrawGrid(nx, nySubcube, nzSubcube, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, inOut, iyStartForId, izStartForId, paddingPlanes);
+    let pathsGridInBR = svgDrawGrid(nx, nySubcube, nzSubcube, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, inOut, iyStartForId, izStartForId, 
+        paddingPlanesConstY, paddingPlanesConstZ);
     let pathsSelInBR = svgDrawSel(nx, nySubcube, nzSubcube, nyPadSelEndUse, nzPadSelEndUse, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 
         inOut, iyStartForId, izStartForId);
 
@@ -982,7 +903,7 @@ function svgDraw2vert(p) {
         p.nyInSubcube,
         p.face,
         p.wTopLeftCanvas, p.hTopLeftCanvas,
-        p.padding,
+        p.paddingPlanesConstYIn, p.paddingPlanesConstZIn,
         p.nyPadSelEndIn, p.nzPadSelEndIn,
         p.topBottomSepSubcubes,
         'in'
@@ -992,7 +913,7 @@ function svgDraw2vert(p) {
         p.nyOutSubcube,
         p.face,
         p.wTopLeftCanvas + 500, p.hTopLeftCanvas + 0,
-        p.paddingOut,
+        p.paddingPlanesConstYOut, p.paddingPlanesConstZOut,
         p.nyPadSelEndOut, p.nzPadSelEndOut,
         p.topBottomSepSubcubes,
         'out'
@@ -1009,24 +930,19 @@ function svgDraw2vertInOut(
     nySubcube, 
     face, 
     wTopLeftCanvas, hTopLeftCanvas, 
-    padding, 
+    paddingPlanesConstY, paddingPlanesConstZ, 
     nyPadSelEnd, nzPadSelEnd,
     topBottomSepSubcubes,
     inOut
     ) {
 
     // Top left
-    var paddingyTop = padding;
-    var paddingyBottom = 0;
-    var paddingzLeft = padding;
-    var paddingzRight = padding;
-    var paddingPlanes = createPaddingPlanes(nySubcube, nz, paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
-
     var nyPadSelEndUse = 0;
     var nzPadSelEndUse = nzPadSelEnd;
     var iyStartForId = 0;
     var izStartForId = 0;
-    let pathsGridInTL = svgDrawGrid(nx, nySubcube, nz, wTopLeftCanvas, hTopLeftCanvas, inOut, iyStartForId, izStartForId, paddingPlanes);
+    let pathsGridInTL = svgDrawGrid(nx, nySubcube, nz, wTopLeftCanvas, hTopLeftCanvas, inOut, iyStartForId, izStartForId, 
+        paddingPlanesConstY, paddingPlanesConstZ);
     let pathsSelInTL = svgDrawSel(nx, nySubcube, nz, nyPadSelEndUse, nzPadSelEndUse, wTopLeftCanvas, 
         hTopLeftCanvas, inOut, iyStartForId, izStartForId);
 
@@ -1034,19 +950,14 @@ function svgDraw2vertInOut(
     let deltaDownH = nySubcube*face.boxDim + nz*face.hTranslate + topBottomSepSubcubes;
 
     // Bottom-left
-    paddingyTop = 0;
-    paddingyBottom = padding;
-    paddingzLeft = padding;
-    paddingzRight = padding;
-    paddingPlanes = createPaddingPlanes(nySubcube, nz, paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
-
     wTopLeftCanvasSubcube = wTopLeftCanvas + deltaDownW;
     hTopLeftCanvasSubcube = hTopLeftCanvas + deltaDownH;
     iyStartForId = ny - nySubcube;
     izStartForId = 0;
     nyPadSelEndUse = nyPadSelEnd;
     nzPadSelEndUse = nzPadSelEnd;
-    let pathsGridInBL = svgDrawGrid(nx, nySubcube, nz, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, inOut, iyStartForId, izStartForId, paddingPlanes);
+    let pathsGridInBL = svgDrawGrid(nx, nySubcube, nz, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, inOut, iyStartForId, izStartForId, 
+        paddingPlanesConstY, paddingPlanesConstZ);
     let pathsSelInBL = svgDrawSel(nx, nySubcube, nz, nyPadSelEndUse, nzPadSelEndUse, 
         wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, inOut, iyStartForId, izStartForId);
 
@@ -1064,7 +975,7 @@ function svgDraw2horiz(p) {
         p.nzInSubcube,
         p.face,
         p.wTopLeftCanvas, p.hTopLeftCanvas,
-        p.padding,
+        p.paddingPlanesConstYIn, p.paddingPlanesConstZIn,
         p.nyPadSelEndIn, p.nzPadSelEndIn,
         p.leftRightSepSubcubes,
         'in'
@@ -1074,7 +985,7 @@ function svgDraw2horiz(p) {
         p.nzOutSubcube,
         p.face,
         p.wTopLeftCanvas + 500, p.hTopLeftCanvas + 0,
-        p.paddingOut,
+        p.paddingPlanesConstYOut, p.paddingPlanesConstZOut,
         p.nyPadSelEndOut, p.nzPadSelEndOut,
         p.leftRightSepSubcubes,
         'out'
@@ -1091,24 +1002,19 @@ function svgDraw2horizInOut(
     nzSubcube, 
     face, 
     wTopLeftCanvas, hTopLeftCanvas, 
-    padding, 
+    paddingPlanesConstY, paddingPlanesConstZ, 
     nyPadSelEnd, nzPadSelEnd,
     leftRightSepSubcubes,
     inOut
     ) {
 
     // Top left
-    var paddingyTop = padding;
-    var paddingyBottom = padding;
-    var paddingzLeft = padding;
-    var paddingzRight = 0;
-    var paddingPlanes = createPaddingPlanes(ny, nzSubcube, paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
-
     var nyPadSelEndUse = nyPadSelEnd;
     var nzPadSelEndUse = 0;
     var iyStartForId = 0;
     var izStartForId = 0;
-    let pathsGridInTL = svgDrawGrid(nx, ny, nzSubcube, wTopLeftCanvas, hTopLeftCanvas, inOut, iyStartForId, izStartForId, paddingPlanes);
+    let pathsGridInTL = svgDrawGrid(nx, ny, nzSubcube, wTopLeftCanvas, hTopLeftCanvas, inOut, iyStartForId, izStartForId, 
+        paddingPlanesConstY, paddingPlanesConstZ);
     let pathsSelInTL = svgDrawSel(nx, ny, nzSubcube, nyPadSelEndUse, nzPadSelEndUse, wTopLeftCanvas, hTopLeftCanvas, 
         inOut, iyStartForId, izStartForId);
 
@@ -1116,19 +1022,14 @@ function svgDraw2horizInOut(
     let deltaRightH = nzSubcube*face.hTranslate + (face.hTranslate/face.wTranslate)*(nx*face.boxDim + leftRightSepSubcubes);
 
     // Top right
-    paddingyTop = padding;
-    paddingyBottom = padding;
-    paddingzLeft = 0;
-    paddingzRight = padding;
-    paddingPlanes = createPaddingPlanes(ny, nzSubcube, paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
-
     var wTopLeftCanvasSubcube = wTopLeftCanvas + deltaRightW;
     var hTopLeftCanvasSubcube = hTopLeftCanvas + deltaRightH;
     iyStartForId = 0;
     izStartForId = nz - nzSubcube;
     nyPadSelEndUse = nyPadSelEnd;
     nzPadSelEndUse = nzPadSelEnd;
-    let pathsGridInTR = svgDrawGrid(nx, ny, nzSubcube, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, inOut, iyStartForId, izStartForId, paddingPlanes);
+    let pathsGridInTR = svgDrawGrid(nx, ny, nzSubcube, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, inOut, iyStartForId, izStartForId, 
+        paddingPlanesConstY, paddingPlanesConstZ);
     let pathsSelInTR = svgDrawSel(nx, ny, nzSubcube, nyPadSelEndUse, nzPadSelEndUse, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 
         inOut, iyStartForId, izStartForId);
 
