@@ -390,6 +390,22 @@ function updateParams() {
     // Update params
     p = new Params(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew);
 
+    // Errors
+    var errs = "";
+    if (p.stride > p.filterSize) {
+        errs += "Stride is larger than the filter size => data in the input is skipped.\n";
+    }
+    let nyOutTheory = (p.nyIn - p.filterSize + 2*p.padding)/p.stride + 1;
+    let nzOutTheory = (p.nzIn - p.filterSize + 2*p.padding)/p.stride + 1;
+    console.log(nyOutTheory);
+    if (!Number.isInteger(nzOutTheory)) {
+        errs += "Filter does not evenly cover data in horizontal direction.\n";
+    }
+    if (!Number.isInteger(nyOutTheory)) {
+        errs += "Filter does not evenly cover data in vertical direction.\n";
+    }
+    $("#ccError").html(errs);
+
     // Redraw
     svgDraw();
 }
@@ -397,69 +413,54 @@ function updateParams() {
 function filterSizeAdd() {
     p.filterSize += 1;
     $('#ccfilterSize').html(String(p.filterSize));
-    p.recalculate();
-    svgDraw();
+    updateParams();
 }
 
 function filterSizeSub() {
     p.filterSize -= 1;
     p.filterSize = Math.max(p.filterSize,1);
     $('#ccfilterSize').html(String(p.filterSize));
-    p.recalculate();
-    svgDraw();
+    updateParams();
+
 }
 
 function strideAdd() {
     p.stride += 1;
     $('#ccstride').html(String(p.stride));
-    p.recalculate();
-    svgDraw();
+    updateParams();
 }
 
 function strideSub() {
     p.stride -= 1;
     p.stride = Math.max(p.stride,1);
     $('#ccstride').html(String(p.stride));
-    p.recalculate();
-    svgDraw();
+    updateParams();
 }
 
 function paddingAdd() {
     p.padding += 1;
     $('#ccpadding').html(String(p.padding));
-    p.recalculate();
-    svgDraw();
+    updateParams();
 }
 
 function paddingSub() {
     p.padding -= 1;
     p.padding = Math.max(p.padding,0);
     $('#ccpadding').html(String(p.padding));
-    p.recalculate();
-    svgDraw();
+    updateParams();
 }
 
 function nFiltersAdd() {
-    svgAnimateStop();
-
     p.nFilters += 1;
     $('#ccnFilters').html(String(p.nFilters));
-    p.recalculate();
-
-    // Draw & animate
-    svgResetAndRedraw();
+    updateParams();
 }
 
 function nFiltersSub() {
-    svgAnimateStop();
-
     p.nFilters -= 1;
     p.nFilters = Math.max(p.nFilters,1);
     $('#ccnFilters').html(String(p.nFilters));
-    p.recalculate();
-
-    // Draw & animate
-    svgResetAndRedraw();
+    updateParams();
 }
 
 function svgResetAndRedraw() {

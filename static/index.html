@@ -52,7 +52,7 @@
         <script>
             $(document).ready(function() {
                 // Trigger the draw method on lead
-                svgDraw();
+                updateParams();
             });
         </script>
 
@@ -73,7 +73,7 @@
                         <h3>ny:</h3>
                     </div>
                     <div class="col-sm-10">
-                        <input type="text" class="enter" value="9" id="ccny" onchange="updateParams();"
+                        <input type="text" class="enter" value="9" id="ccnyInput" onchange="updateParams();"
                             onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
                     </div>
                 </div>
@@ -83,7 +83,7 @@
                         <h3>nz:</h3>
                     </div>
                     <div class="col-sm-10">
-                        <input type="text" class="enter" value="9" id="ccnz" onchange="updateParams();"
+                        <input type="text" class="enter" value="9" id="ccnzInput" onchange="updateParams();"
                             onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
                     </div>
                 </div>
@@ -137,6 +137,8 @@
         -->
 
         <div id='ccSVG'></div>
+
+        <h3 id='ccError' class='errorLabel'></h3>
 
         <footer>
             Created by <a href="https://oliver-ernst.com">Oliver K. Ernst</a> (2021). 
