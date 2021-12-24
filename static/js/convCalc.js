@@ -4,6 +4,9 @@ let gridFillRGB = 'rgb(90%,90%,90%)';
 let gridFillOpacity = '0.8';
 let gridStrokeOpacity = '1';
 
+let gridFillInvalidRGB = 'rgb(100%,80%,80%)';
+let gridFillInvalidOpacity = '0.8';
+
 let gridPaddingFillRGB = 'rgb(80%,80%,80%)';
 let gridPaddingFillOpacity = '0.8';
 
@@ -17,10 +20,11 @@ function selFillValidRGB(iFilter, nFilters) {
 }
 
 class Path {
-    constructor(idStr, pts, isGrid, isPadding) {
+    constructor(idStr, pts, isGrid, isGridInvalid, isPadding) {
         this.idStr = idStr;
         this.pts = pts;
         this.isGrid = isGrid;
+        this.isGridInvalid = isGridInvalid;
         this.isPadding = isPadding;
     }
 
@@ -31,7 +35,13 @@ class Path {
         s += '<path id="' + this.idStr + '"';
 
         if (this.isGrid) {
-            if (this.isPadding) {
+            if (this.isGridInvalid) {
+                s += ' style="fill-rule:nonzero;fill:'
+                    +gridFillInvalidRGB+';fill-opacity:'
+                    +gridFillInvalidOpacity+';stroke-width:0.1;stroke-linecap:butt;\
+                    stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:'
+                    +gridStrokeOpacity+';stroke-miterlimit:10;"';
+            } else if (this.isPadding) {
                 s += ' style="fill-rule:nonzero;fill:'
                     +gridPaddingFillRGB+';fill-opacity:'
                     +gridPaddingFillOpacity+';stroke-width:0.1;stroke-linecap:butt;\
@@ -43,7 +53,7 @@ class Path {
                     +gridFillOpacity+';stroke-width:0.1;stroke-linecap:butt;\
                     stroke-linejoin:miter;stroke:rgb(0%,0%,0%);stroke-opacity:'
                     +gridStrokeOpacity+';stroke-miterlimit:10;"';
-                }
+            }
         } else {
             s += ' style="fill-opacity:0;fill:rgb(0%,0%,100%);\
                 stroke-width:0.2;stroke-linecap:butt;stroke-linejoin:miter;\
@@ -449,21 +459,21 @@ function updateParams() {
     // Errors
     var errs = "";
     if (p.stride > p.filterSize) {
-        errs += "Stride is larger than the filter size => data in the input is skipped.\n";
+        errs += "Stride is larger than the filter size => data in the input is skipped.<br />";
     }
     
     if (p.padding >= p.filterSize) {
-        errs += "Padding is greater or equal to filter size => some filters are not covering any data at all, only padding.\n"
+        errs += "Padding is greater or equal to filter size => some filters are not covering any data at all, only padding.<br />"
     }
 
     let nzOutTheory = (p.nzIn - p.filterSize + 2*p.padding)/p.stride + 1;
     if (!Number.isInteger(nzOutTheory)) {
-        errs += "Filter does not evenly cover data in horizontal direction.\n";
+        errs += "Filter does not evenly cover data in horizontal direction.<br />";
     }
 
     let nyOutTheory = (p.nyIn - p.filterSize + 2*p.padding)/p.stride + 1;
     if (!Number.isInteger(nyOutTheory)) {
-        errs += "Filter does not evenly cover data in vertical direction.\n";
+        errs += "Filter does not evenly cover data in vertical direction.<br />";
     }
     $("#ccError").html(errs);
 
@@ -539,7 +549,7 @@ function svgResetAndRedraw() {
     }
 }
 
-function drawFaceTop(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iy, iz, isGrid, isPadding) {
+function drawFaceTop(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iy, iz, isGrid, isGridInvalid, isPadding) {
     let wTopLeft = wTopLeftCanvas + ix*p.face.boxDim + iz*p.face.wTranslate;
     let hTopLeft = hTopLeftCanvas + iy*p.face.boxDim + iz*p.face.hTranslate;
 
@@ -550,10 +560,10 @@ function drawFaceTop(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iy, iz, isGrid, 
         [wTopLeft + p.face.wTranslate, hTopLeft + p.face.hTranslate],
         [wTopLeft, hTopLeft]
         ];
-    return new Path(idStr, pts, isGrid, isPadding);
+    return new Path(idStr, pts, isGrid, isGridInvalid, isPadding);
 }
 
-function drawFaceLeft(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iy, iz, isGrid, isPadding) {
+function drawFaceLeft(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iy, iz, isGrid, isGridInvalid, isPadding) {
     let wTopLeft = wTopLeftCanvas + iz*p.face.wTranslate + ix*p.face.boxDim;
     let hTopLeft = hTopLeftCanvas + iz*p.face.hTranslate + iy*p.face.boxDim;
 
@@ -564,10 +574,10 @@ function drawFaceLeft(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iy, iz, isGrid,
         [wTopLeft, hTopLeft + p.face.boxDim],
         [wTopLeft, hTopLeft]
         ];
-    return new Path(idStr, pts, isGrid, isPadding);
+    return new Path(idStr, pts, isGrid, isGridInvalid, isPadding);
 }
 
-function drawFaceFront(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iy, iz, isGrid, isPadding) {
+function drawFaceFront(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iy, iz, isGrid, isGridInvalid, isPadding) {
     let wTopLeft = wTopLeftCanvas + ix*p.face.boxDim + (1+iz) * p.face.wTranslate;
     let hTopLeft = hTopLeftCanvas + iy*p.face.boxDim + (1+iz) * p.face.hTranslate;
 
@@ -578,7 +588,7 @@ function drawFaceFront(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iy, iz, isGrid
         [wTopLeft, hTopLeft + p.face.boxDim],
         [wTopLeft, hTopLeft]
         ];
-    return new Path(idStr, pts, isGrid, isPadding);
+    return new Path(idStr, pts, isGrid, isGridInvalid, isPadding);
 }
 
 function svgAnimateStart() {
@@ -649,6 +659,7 @@ function svgDrawGrid(nxDraw, nyDraw, nzDraw, wTopLeftCanvas, hTopLeftCanvas, inO
 
     let isGrid = true;
     var idStr = "";
+    let isGridInvalid = true;
 
     // Top
     let iyLevel = 0;
@@ -660,7 +671,7 @@ function svgDrawGrid(nxDraw, nyDraw, nzDraw, wTopLeftCanvas, hTopLeftCanvas, inO
             } else {
                 isPadding = false;
             }
-            paths.set(idStr, drawFaceTop(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iyLevel, iz, isGrid, isPadding));
+            paths.set(idStr, drawFaceTop(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iyLevel, iz, isGrid, isGridInvalid, isPadding));
         }
     }
 
@@ -674,7 +685,7 @@ function svgDrawGrid(nxDraw, nyDraw, nzDraw, wTopLeftCanvas, hTopLeftCanvas, inO
             } else {
                 isPadding = false;
             }
-            paths.set(idStr, drawFaceLeft(idStr, wTopLeftCanvas, hTopLeftCanvas, ixLevel, iy, iz, isGrid, isPadding));
+            paths.set(idStr, drawFaceLeft(idStr, wTopLeftCanvas, hTopLeftCanvas, ixLevel, iy, iz, isGrid, isGridInvalid, isPadding));
         }
     }
 
@@ -688,7 +699,7 @@ function svgDrawGrid(nxDraw, nyDraw, nzDraw, wTopLeftCanvas, hTopLeftCanvas, inO
             } else {
                 isPadding = false;
             }
-            paths.set(idStr, drawFaceFront(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iy, izLevel, isGrid, isPadding));
+            paths.set(idStr, drawFaceFront(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iy, izLevel, isGrid, isGridInvalid, isPadding));
         }
     }
 
@@ -700,18 +711,20 @@ function svgDrawSel(nxDraw, nyDraw, nzDraw, nyPadSelEndInDraw, nzPadSelEndInDraw
 
     let isGrid = false;
     var idStr = "";
+    let isPadding = false;
+    let isGridInvalid = false;
 
     for (let ix = 0; ix < nxDraw; ix++) { 
         for (let iy = 0; iy < nyDraw+nyPadSelEndInDraw; iy++) { 
             for (let iz = 0; iz < nzDraw+nzPadSelEndInDraw; iz++) {
                 idStr = getIdStr(ix,iyStartForId+iy,izStartForId+iz,'top','sel',inOut);
-                paths.set(idStr, drawFaceTop(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iy, iz, isGrid));
+                paths.set(idStr, drawFaceTop(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iy, iz, isGrid, isGridInvalid, isPadding));
                 
                 idStr = getIdStr(ix,iyStartForId+iy,izStartForId+iz,'left','sel',inOut);
-                paths.set(idStr, drawFaceLeft(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iy, iz, isGrid));
+                paths.set(idStr, drawFaceLeft(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iy, iz, isGrid, isGridInvalid, isPadding));
                 
                 idStr = getIdStr(ix,iyStartForId+iy,izStartForId+iz,'front','sel',inOut);
-                paths.set(idStr, drawFaceFront(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iy, iz, isGrid));
+                paths.set(idStr, drawFaceFront(idStr, wTopLeftCanvas, hTopLeftCanvas, ix, iy, iz, isGrid, isGridInvalid, isPadding));
             }
         }
     }
