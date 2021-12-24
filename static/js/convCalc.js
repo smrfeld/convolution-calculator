@@ -1,4 +1,3 @@
-var x = 0;
 var timeoutID = "";
 
 let gridFillRGB = 'rgb(90%,90%,90%)';
@@ -508,7 +507,10 @@ function svgCreateStr(width, height, pathsGrid, pathsSel) {
 }
 
 function getIdStr(ix, iy, iz, loc, obj, inOut) {
-    return String(ix).padStart(3, '0') + '_' + String(iy).padStart(3, '0') + '_' + String(iz).padStart(3, '0') + '_' + inOut + '_' + loc + '_' + obj;
+    return String(ix).padStart(3, '0') + '_' 
+        + String(iy).padStart(3, '0') + '_' 
+        + String(iz).padStart(3, '0') + '_' 
+        + inOut + '_' + loc + '_' + obj;
 }
 
 function svgDrawGrid(nxDraw, nyDraw, nzDraw, wTopLeftCanvas, hTopLeftCanvas, inOut, iyStartForId, izStartForId, 
