@@ -99,8 +99,9 @@ class Params {
         this.nzIn = this.nzInput + 2*this.padding;
 
         // Sub-cube sizes
-        this.nyInSubcube = Math.min(this.nyIn, this.stride + this.filterSize + 1);
-        this.nzInSubcube = Math.min(this.nzIn, this.stride + this.filterSize + 1);
+        this.nyInSubcube = this.stride + this.filterSize + 1;
+        this.nzInSubcube = this.stride + this.filterSize + 1;
+        console.log("Subcube: (ny,nz) = ", this.nyInSubcube, this.nzInSubcube);
 
         // Face
         this.nzSep = 6;
@@ -590,15 +591,14 @@ function svgDrawSel(nxDraw, nyDraw, nzDraw, nyPadEndDraw, nzPadEndDraw, wTopLeft
 }
 
 function svgDraw() {
-    console.log(p);
     // Check how many pieces to draw
-    if ((2*p.nzInSubcube > p.nzIn) && (2*p.nyInSubcube > p.nyIn)) {
+    if ((2*p.nzInSubcube >= p.nzIn) && (2*p.nyInSubcube >= p.nyIn)) {
         // Only draw one
         svgDraw1(p);
-    } else if (2*p.nzInSubcube > p.nzIn) {
+    } else if (2*p.nzInSubcube >= p.nzIn) {
         // Only draw vertical
         svgDraw2vert(p);
-    } else if (2*p.nyInSubcube > p.nyIn) {
+    } else if (2*p.nyInSubcube >= p.nyIn) {
         // Only draw horizontal
         svgDraw2horiz(p);
     } else {
@@ -736,8 +736,8 @@ function svgDraw2vert(p) {
     hTopLeftCanvasSubcube = p.hTopLeftCanvas + deltaDownH;
     iyStartForId = p.nyIn - p.nyInSubcube;
     izStartForId = 0;
-    nyPadEnd = nyPadEndIn;
-    nzPadEnd = nzPadEndIn;
+    nyPadEnd = p.nyPadEndIn;
+    nzPadEnd = p.nzPadEndIn;
     let pathsGridInBL = svgDrawGrid(p.nx, p.nyInSubcube, p.nzInSubcube, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 'in', iyStartForId, izStartForId);
     let pathsSelInBL = svgDrawSel(p.nx, p.nyInSubcube, p.nzInSubcube, nyPadEnd, nzPadEnd, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 'in', iyStartForId, izStartForId);
 
@@ -752,13 +752,13 @@ function svgDraw2vert(p) {
 function svgDraw2horiz(p) {
     console.log("drawing 2 horizontal");
 
-    // Draw input grids
+    // Draw input
     var nyPadEnd = p.nyInHiddenPad;
     var nzPadEnd = 0;
     var iyStartForId = 0;
     var izStartForId = 0;
-    let pathsGridInTL = svgDrawGrid(p.nx, p.nyInSubcube, p.nzInSubcube, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId);
-    let pathsSelInTL = svgDrawSel(p.nx, p.nyInSubcube, p.nzInSubcube, nyPadEnd, nzPadEnd, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId);
+    let pathsGridInTL = svgDrawGrid(p.nx, p.nyIn, p.nzInSubcube, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId);
+    let pathsSelInTL = svgDrawSel(p.nx, p.nyIn, p.nzInSubcube, nyPadEnd, nzPadEnd, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId);
 
     let deltaRightW = (p.nzInSubcube+p.nzSep) * p.face.wTranslate;
     let deltaRightH = (p.nzInSubcube+p.nzSep) * p.face.hTranslate;
@@ -769,8 +769,8 @@ function svgDraw2horiz(p) {
     izStartForId = p.nzIn - p.nzInSubcube;
     nyPadEnd = p.nyInHiddenPad;
     nzPadEnd = p.nzInHiddenPad;
-    let pathsGridInTR = svgDrawGrid(p.nx, p.nyInSubcube, p.nzInSubcube, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 'in', iyStartForId, izStartForId);
-    let pathsSelInTR = svgDrawSel(p.nx, p.nyInSubcube, p.nzInSubcube, nyPadEnd, nzPadEnd, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 'in', iyStartForId, izStartForId);
+    let pathsGridInTR = svgDrawGrid(p.nx, p.nyIn, p.nzInSubcube, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 'in', iyStartForId, izStartForId);
+    let pathsSelInTR = svgDrawSel(p.nx, p.nyIn, p.nzInSubcube, nyPadEnd, nzPadEnd, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 'in', iyStartForId, izStartForId);
 
     // Draw
     let pathsGrid = new Map(function*() { yield* pathsGridInTL; yield* pathsGridInTR; }());
