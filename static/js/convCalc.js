@@ -786,16 +786,28 @@ function svgDraw4(p) {
 function svgDraw2vert(p) {
     console.log("drawing 2 vertical");
 
-    // Draw input grids
+    // Top left
+    var paddingyTop = p.padding;
+    var paddingyBottom = 0;
+    var paddingzLeft = p.padding;
+    var paddingzRight = p.padding;
+
     var nyInHiddenPad = 0;
     var nzInHiddenPad = p.nzInHiddenPad;
     var iyStartForId = 0;
     var izStartForId = 0;
-    let pathsGridInTL = svgDrawGrid(p.nx, p.nyInSubcube, p.nzIn, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId);
+    let pathsGridInTL = svgDrawGrid(p.nx, p.nyInSubcube, p.nzIn, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId,
+        paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
     let pathsSelInTL = svgDrawSel(p.nx, p.nyInSubcube, p.nzIn, nyInHiddenPad, nzInHiddenPad, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId);
 
     let deltaDownW = 0;
     let deltaDownH = p.nzInSubcube * p.face.hTranslate + (p.nyInSubcube+1) * p.face.boxDim;
+
+    // Bottom-left
+    paddingyTop = 0;
+    paddingyBottom = p.padding;
+    paddingzLeft = p.padding;
+    paddingzRight = p.padding;
 
     wTopLeftCanvasSubcube = p.wTopLeftCanvas + deltaDownW;
     hTopLeftCanvasSubcube = p.hTopLeftCanvas + deltaDownH;
@@ -805,7 +817,8 @@ function svgDraw2vert(p) {
     nzInHiddenPad = p.nzInHiddenPad;
     console.log("iyStartForId",iyStartForId);
     console.log("p.nyInSubcube",p.nyInSubcube);
-    let pathsGridInBL = svgDrawGrid(p.nx, p.nyInSubcube, p.nzIn, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 'in', iyStartForId, izStartForId);
+    let pathsGridInBL = svgDrawGrid(p.nx, p.nyInSubcube, p.nzIn, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 'in', iyStartForId, izStartForId,
+        paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
     let pathsSelInBL = svgDrawSel(p.nx, p.nyInSubcube, p.nzIn, nyInHiddenPad, nzInHiddenPad, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 'in', iyStartForId, izStartForId);
 
     // Draw
@@ -819,16 +832,28 @@ function svgDraw2vert(p) {
 function svgDraw2horiz(p) {
     console.log("drawing 2 horizontal");
 
-    // Draw input
+    // Top left
+    var paddingyTop = p.padding;
+    var paddingyBottom = p.padding;
+    var paddingzLeft = p.padding;
+    var paddingzRight = 0;
+
     var nyInHiddenPad = p.nyInHiddenPad;
     var nzInHiddenPad = 0;
     var iyStartForId = 0;
     var izStartForId = 0;
-    let pathsGridInTL = svgDrawGrid(p.nx, p.nyIn, p.nzInSubcube, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId);
+    let pathsGridInTL = svgDrawGrid(p.nx, p.nyIn, p.nzInSubcube, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId,
+        paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
     let pathsSelInTL = svgDrawSel(p.nx, p.nyIn, p.nzInSubcube, nyInHiddenPad, nzInHiddenPad, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId);
 
     let deltaRightW = (p.nzInSubcube+p.nzSep) * p.face.wTranslate;
     let deltaRightH = (p.nzInSubcube+p.nzSep) * p.face.hTranslate;
+
+    // Top right
+    paddingyTop = p.padding;
+    paddingyBottom = p.padding;
+    paddingzLeft = 0;
+    paddingzRight = p.padding;
 
     var wTopLeftCanvasSubcube = p.wTopLeftCanvas + deltaRightW;
     var hTopLeftCanvasSubcube = p.hTopLeftCanvas + deltaRightH;
@@ -836,7 +861,8 @@ function svgDraw2horiz(p) {
     izStartForId = p.nzIn - p.nzInSubcube;
     nyInHiddenPad = p.nyInHiddenPad;
     nzInHiddenPad = p.nzInHiddenPad;
-    let pathsGridInTR = svgDrawGrid(p.nx, p.nyIn, p.nzInSubcube, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 'in', iyStartForId, izStartForId);
+    let pathsGridInTR = svgDrawGrid(p.nx, p.nyIn, p.nzInSubcube, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 'in', iyStartForId, izStartForId,
+        paddingyTop, paddingyBottom, paddingzLeft, paddingzRight);
     let pathsSelInTR = svgDrawSel(p.nx, p.nyIn, p.nzInSubcube, nyInHiddenPad, nzInHiddenPad, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 'in', iyStartForId, izStartForId);
 
     // Draw
