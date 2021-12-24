@@ -132,6 +132,23 @@ class Params {
         this.hTopLeftCanvas = 100;
     }
 
+    checkHowManyPieces() {
+        // Check how many pieces to draw
+        if ((2*this.nzInSubcube >= this.nzIn) && (2*this.nyInSubcube >= this.nyIn)) {
+            // Only draw one
+            return "one";
+        } else if (2*this.nzInSubcube >= this.nzIn) {
+            // Only draw vertical
+            return "twoVertical";
+        } else if (2*this.nyInSubcube >= this.nyIn) {
+            // Only draw horizontal
+            return "twoHorizontal";
+        } else {
+            // Draw all 4 pieces
+            return "four";
+        }
+    }
+
     checkSelectionValid() {
         this.ixSelOut = Math.min(this.ixSelOut, this.nFilters-1);
         this.iySelOut = Math.min(this.iySelOut, this.nyOut-1);
@@ -140,7 +157,8 @@ class Params {
 
     svgIncrementSelz() {    
         this.izSelOut += 1;
-        if (this.nzOut > 4) {
+        let pieces = this.checkHowManyPieces();
+        if ((pieces == 'four') || (pieces == 'twoHorizontal')) {
             // Break in z direction
             // Only allowed indexes are 0,1 or nzOut-2, nzOut-1
             if ((this.izSelOut > 1) && (this.izSelOut < this.nzOut-2)) {
@@ -151,7 +169,8 @@ class Params {
 
     svgIncrementSely() {    
         this.iySelOut += 1;
-        if (this.nyOut > 4) {
+        let pieces = this.checkHowManyPieces();
+        if ((pieces == 'four') || (pieces == 'twoVertical')) {
             // Break in y direction
             // Only allowed indexes are 0,1 or nyOut-2, nyOut-1
             if ((this.iySelOut > 1) && (this.iySelOut < this.nyOut-2)) {
@@ -621,17 +640,14 @@ function svgDrawSel(nxDraw, nyDraw, nzDraw, nyPadEndDraw, nzPadEndDraw, wTopLeft
 
 function svgDraw() {
     // Check how many pieces to draw
-    if ((2*p.nzInSubcube >= p.nzIn) && (2*p.nyInSubcube >= p.nyIn)) {
-        // Only draw one
+    let pieces = p.checkHowManyPieces();
+    if (pieces == 'one') {
         svgDraw1(p);
-    } else if (2*p.nzInSubcube >= p.nzIn) {
-        // Only draw vertical
+    } else if (pieces == 'twoVertical') {
         svgDraw2vert(p);
-    } else if (2*p.nyInSubcube >= p.nyIn) {
-        // Only draw horizontal
+    } else if (pieces == 'twoHorizontal') {
         svgDraw2horiz(p);
-    } else {
-        // Draw all 4 pieces
+    } else if (pieces == 'four') {
         svgDraw4(p);
     }
 }
