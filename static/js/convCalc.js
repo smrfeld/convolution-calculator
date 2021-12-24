@@ -403,6 +403,7 @@ function filterSizeAdd() {
 
 function filterSizeSub() {
     p.filterSize -= 1;
+    p.filterSize = Math.max(p.filterSize,1);
     $('#ccfilterSize').html(String(p.filterSize));
     p.recalculate();
     svgDraw();
@@ -417,6 +418,7 @@ function strideAdd() {
 
 function strideSub() {
     p.stride -= 1;
+    p.stride = Math.max(p.stride,1);
     $('#ccstride').html(String(p.stride));
     p.recalculate();
     svgDraw();
@@ -431,6 +433,7 @@ function paddingAdd() {
 
 function paddingSub() {
     p.padding -= 1;
+    p.padding = Math.max(p.padding,0);
     $('#ccpadding').html(String(p.padding));
     p.recalculate();
     svgDraw();

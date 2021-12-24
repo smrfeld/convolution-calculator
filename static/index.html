@@ -57,42 +57,70 @@
         </script>
 
         <div class="row">
-            <h3>nx: <input type="text" class="enter" value="3" id="ccnx" onchange="updateParams();"
-                onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/> </h3>
-        </div>
+            <div class="col-sm-6">
+                <div class="row">
+                    <div class="col-sm-2">
+                        <h3>nx:</h3>
+                    </div>
+                    <div class="col-sm-10">
+                        <input type="text" class="enter" value="3" id="ccnx" onchange="updateParams();"
+                            onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+                    </div>
+                </div>
 
-        <div class="row">
-            <h3>ny: <input type="text" class="enter" value="9" id="ccnyInput" onchange="updateParams();"
-                onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/> </h3>
-        </div>
+                <div class="row">
+                    <div class="col-sm-2">
+                        <h3>ny:</h3>
+                    </div>
+                    <div class="col-sm-10">
+                        <input type="text" class="enter" value="9" id="ccny" onchange="updateParams();"
+                            onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+                    </div>
+                </div>
 
-        <div class="row">
-            <h3>nz: <input type="text" class="enter" value="9" id="ccnzInput" onchange="updateParams();"
-                onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/> </h3>
-        </div>
-
-        <div class="row">
-            <h3>padding: <span id="ccpadding">0</span></h3>
-            <input type="button" class="button_pw" value="-" onclick="paddingSub();">
-            <input type="button" class="button_pw" value="+" onclick="paddingAdd();">
-        </div>
+                <div class="row">
+                    <div class="col-sm-2">
+                        <h3>nz:</h3>
+                    </div>
+                    <div class="col-sm-10">
+                        <input type="text" class="enter" value="9" id="ccnz" onchange="updateParams();"
+                            onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="row">
+                    <h3>padding: <span id="ccpadding">0</span></h3>
+                    &nbsp;
+                    <input type="button" class="button_pw" value="-" onclick="paddingSub();">
+                    &nbsp;
+                    <input type="button" class="button_pw" value="+" onclick="paddingAdd();">
+                </div>
     
-        <div class="row">
-            <h3># filters: <span id="ccnFilters">2</span></h3>
-            <input type="button" class="button_pw" value="-" onclick="nFiltersSub();">
-            <input type="button" class="button_pw" value="+" onclick="nFiltersAdd();">
-        </div>
-
-        <div class="row">
-            <h3>filter extent: <span id="ccfilterSize">4</span></h3>
-            <input type="button" class="button_pw" value="-" onclick="filterSizeSub();">
-            <input type="button" class="button_pw" value="+" onclick="filterSizeAdd();">
-        </div>
-
-        <div class="row">
-            <h3>stride: <span id="ccstride">2</span></h3>
-            <input type="button" class="button_pw" value="-" onclick="strideSub();">
-            <input type="button" class="button_pw" value="+" onclick="strideAdd();">
+                <div class="row">
+                    <h3># filters: <span id="ccnFilters">2</span></h3>
+                    &nbsp;
+                    <input type="button" class="button_pw" value="-" onclick="nFiltersSub();">
+                    &nbsp;
+                    <input type="button" class="button_pw" value="+" onclick="nFiltersAdd();">
+                </div>
+        
+                <div class="row">
+                    <h3>filter extent: <span id="ccfilterSize">4</span></h3>
+                    &nbsp;
+                    <input type="button" class="button_pw" value="-" onclick="filterSizeSub();">
+                    &nbsp;
+                    <input type="button" class="button_pw" value="+" onclick="filterSizeAdd();">
+                </div>
+        
+                <div class="row">
+                    <h3>stride: <span id="ccstride">2</span></h3>
+                    &nbsp;
+                    <input type="button" class="button_pw" value="-" onclick="strideSub();">
+                    &nbsp;
+                    <input type="button" class="button_pw" value="+" onclick="strideAdd();">
+                </div>
+            </div>
         </div>
 
         <div class="row">
