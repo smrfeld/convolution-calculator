@@ -345,7 +345,7 @@ class DrawingSelections {
     }
 }
 
-let nx=3, nyInput=9, nzInput=9, padding=0, nFilters=2, filterSize=1, stride=2;
+let nx=3, nyInput=9, nzInput=9, padding=0, nFilters=2, filterSize=2, stride=2;
 var p = new Params(nx, nyInput, nzInput, padding, nFilters, filterSize, stride);
 var ds = new DrawingSelections();
 
@@ -389,6 +389,20 @@ function updateParams() {
     p = new Params(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew);
 
     // Redraw
+    svgDraw();
+}
+
+function filterSizeAdd() {
+    p.filterSize += 1;
+    $('#ccfilterSize').html(String(p.filterSize));
+    p.recalculate();
+    svgDraw();
+}
+
+function filterSizeSub() {
+    p.filterSize -= 1;
+    $('#ccfilterSize').html(String(p.filterSize));
+    p.recalculate();
     svgDraw();
 }
 

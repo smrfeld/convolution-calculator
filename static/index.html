@@ -24,7 +24,8 @@
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <!-- <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}"> -->
+    <!--<link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">-->
+    <link rel="stylesheet" href="css/style.css">
 
     <!-- JQuery -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -77,14 +78,15 @@
         </div>
     
         <div class="row">
-            <h3>nFilters: <span id="ccnFilters">2</span></h3>
+            <h3># filters: <span id="ccnFilters">2</span></h3>
             <input type="button" class="button_pw" value="-" onclick="nFiltersSub();">
             <input type="button" class="button_pw" value="+" onclick="nFiltersAdd();">
         </div>
 
         <div class="row">
-            <h3>filterSize: <input type="text" class="enter" value="1" id="ccfilterSize" onchange="updateParams();"
-                onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/> </h3>
+            <h3>filter extent: <span id="ccfilterSize">2</span></h3>
+            <input type="button" class="button_pw" value="-" onclick="filterSizeSub();">
+            <input type="button" class="button_pw" value="+" onclick="filterSizeAdd();">
         </div>
 
         <div class="row">
