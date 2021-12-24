@@ -331,30 +331,59 @@ var p = new Params(nx, nyInput, nzInput, padding, nFilters, filterSize, stride);
 var ds = new DrawingSelections();
 
 function updateParams() {
-    var nx = parseInt($("#ccnx").val());
-    if (isNaN(nx)) {
-        nx = p.nx;
+    var nxNew = parseInt($("#ccnx").val());
+    if (isNaN(nxNew)) {
+        nxNew = p.nx;
     }
 
-    var nyInput = parseInt($("#ccnyInput").val());
-    if (isNaN(nyInput)) {
-        nyInput = p.nyInput;
+    var nyInputNew = parseInt($("#ccnyInput").val());
+    if (isNaN(nyInputNew)) {
+        nyInputNew = p.nyInput;
     }
 
-    var nzInput = parseInt($("#ccnzInput").val());
-    if (isNaN(nzInput)) {
-        nzInput = p.nzInput;
+    var nzInputNew = parseInt($("#ccnzInput").val());
+    if (isNaN(nzInputNew)) {
+        nzInputNew = p.nzInput;
     }
 
-    filterSize = parseInt($("#ccfilterSize").val());
-    if (isNaN(filterSize)) {
-        filterSize = p.filterSize;
+    paddingNew = parseInt($("#ccpadding").val());
+    if (isNaN(paddingNew)) {
+        paddingNew = p.padding;
+    }
+
+    nFiltersNew = parseInt($("#ccnFilters").val());
+    if (isNaN(nFiltersNew)) {
+        nFiltersNew = p.nFilters;
+    }
+
+    filterSizeNew = parseInt($("#ccfilterSize").val());
+    if (isNaN(filterSizeNew)) {
+        filterSizeNew = p.filterSize;
+    }
+
+    strideNew = parseInt($("#ccstride").val());
+    if (isNaN(strideNew)) {
+        strideNew = p.stride;
     }
 
     // Update params
-    p = new Params(nx, nyInput, nzInput, padding, nFilters, filterSize, stride);
+    p = new Params(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew);
 
     // Redraw
+    svgDraw();
+}
+
+function strideAdd() {
+    p.stride += 1;
+    $('#ccstride').html(String(p.stride));
+    p.recalculate();
+    svgDraw();
+}
+
+function strideSub() {
+    p.stride -= 1;
+    $('#ccstride').html(String(p.stride));
+    p.recalculate();
     svgDraw();
 }
 
@@ -726,8 +755,8 @@ function svgDraw2vert(p) {
     var nzPadEnd = p.nzInHiddenPad;
     var iyStartForId = 0;
     var izStartForId = 0;
-    let pathsGridInTL = svgDrawGrid(p.nx, p.nyInSubcube, p.nzInSubcube, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId);
-    let pathsSelInTL = svgDrawSel(p.nx, p.nyInSubcube, p.nzInSubcube, nyPadEnd, nzPadEnd, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId);
+    let pathsGridInTL = svgDrawGrid(p.nx, p.nyInSubcube, p.nzIn, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId);
+    let pathsSelInTL = svgDrawSel(p.nx, p.nyInSubcube, p.nzIn, nyPadEnd, nzPadEnd, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId);
 
     let deltaDownW = 0;
     let deltaDownH = p.nzInSubcube * p.face.hTranslate + (p.nyInSubcube+1) * p.face.boxDim;
@@ -738,8 +767,8 @@ function svgDraw2vert(p) {
     izStartForId = 0;
     nyPadEnd = p.nyPadEndIn;
     nzPadEnd = p.nzPadEndIn;
-    let pathsGridInBL = svgDrawGrid(p.nx, p.nyInSubcube, p.nzInSubcube, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 'in', iyStartForId, izStartForId);
-    let pathsSelInBL = svgDrawSel(p.nx, p.nyInSubcube, p.nzInSubcube, nyPadEnd, nzPadEnd, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 'in', iyStartForId, izStartForId);
+    let pathsGridInBL = svgDrawGrid(p.nx, p.nyInSubcube, p.nzIn, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 'in', iyStartForId, izStartForId);
+    let pathsSelInBL = svgDrawSel(p.nx, p.nyInSubcube, p.nzIn, nyPadEnd, nzPadEnd, wTopLeftCanvasSubcube, hTopLeftCanvasSubcube, 'in', iyStartForId, izStartForId);
 
     // Draw
     let pathsGrid = new Map(function*() { yield* pathsGridInTL; yield* pathsGridInBL; }());
