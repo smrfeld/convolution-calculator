@@ -117,10 +117,12 @@ class Params {
         this.nxOut = this.nFilters;
 
         // Padding for drawing hidden parts
-        let nyInCalculatedFromNyOut = this.stride*this.nyOut + this.padding;
-        let nzInCalculatedFromNyOut = this.stride*this.nzOut + this.padding;
+        let nyInCalculatedFromNyOut = this.stride*this.nyOut + this.filterSize;
+        let nzInCalculatedFromNzOut = this.stride*this.nzOut + this.filterSize;
+        console.log('nyInCalculatedFromNyOut',nyInCalculatedFromNyOut);
+        console.log('nyIn',this.nyIn);
         this.nyInHiddenPad = nyInCalculatedFromNyOut - this.nyIn;
-        this.nzInHiddenPad = nzInCalculatedFromNyOut - this.nzIn;
+        this.nzInHiddenPad = nzInCalculatedFromNzOut - this.nzIn;
 
         // Selection
         this.ixSelOut = 0;
@@ -345,7 +347,7 @@ class DrawingSelections {
     }
 }
 
-let nx=3, nyInput=9, nzInput=9, padding=0, nFilters=2, filterSize=2, stride=2;
+let nx=3, nyInput=9, nzInput=9, padding=0, nFilters=2, filterSize=4, stride=2;
 var p = new Params(nx, nyInput, nzInput, padding, nFilters, filterSize, stride);
 var ds = new DrawingSelections();
 
