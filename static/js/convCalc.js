@@ -278,12 +278,27 @@ class DrawingSelections {
     
         // Check if valid
         var isValid = true;
+
+        // Sticking out?
         if (izSelIn + p.filterSize > p.nzIn) {
             isValid = false;
         } else if (iySelIn + p.filterSize > p.nyIn) {
             isValid = false;
         }
-    
+
+        // Padding is greater (or equal) than filterSize and we're in the padding zone
+        if (p.padding >= p.filterSize) {
+            if (iySelIn + p.filterSize <= p.padding) {
+                isValid = false;
+            } else if (izSelIn + p.filterSize <= p.padding) {
+                isValid = false;
+            } else if (p.nyIn - iySelIn <= p.padding) {
+                isValid = false;
+            } else if (p.nzIn - izSelIn <= p.padding) {
+                isValid = false;
+            }
+        }
+
         // Input top
         let iyTop = iySelIn;
         for (let ix = 0; ix < p.nx; ix++) { 
