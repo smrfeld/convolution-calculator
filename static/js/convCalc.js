@@ -255,52 +255,124 @@ class Params {
         console.log("TopLeft Out:", this.wTopLeftCanvasOut, this.hTopLeftCanvasOut);
     }
 
+    getSplitParams(inOut) {
+        var nx, ny, nz;
+        if (this.splitYdir && this.splitZdir) {
+            // Four pieces
+            if (inOut == 'in') {
+                nx = this.nx;
+                ny = this.nyInSubcube;
+                nz = this.nzInSubcube;
+            } else {
+                nx = this.nxOut;
+                ny = this.nyOutSubcube;
+                nz = this.nzOutSubcube;
+            }
+        } else if (this.splitYdir && !this.splitZdir) {
+            // Two vertical
+            if (inOut == 'in') {
+                nx = this.nx;
+                ny = this.nyInSubcube;
+                nz = this.nzIn;
+            } else {
+                nx = this.nxOut;
+                ny = this.nyOutSubcube;
+                nz = this.nzOut;
+            }
+        } else if (!this.splitYdir && this.splitZdir) {
+            // Two horizontal
+            if (inOut == 'in') {
+                nx = this.nx;
+                ny = this.nyIn;
+                nz = this.nzInSubcube;
+            } else {
+                nx = this.nxOut;
+                ny = this.nyOut;
+                nz = this.nzOutSubcube;
+            }
+        } else {
+            // One piece
+            if (inOut == 'in') {
+                nx = this.nx;
+                ny = this.nyIn;
+                nz = this.nzIn;
+            } else {
+                nx = this.nxOut;
+                ny = this.nyOut;
+                nz = this.nzOut;
+            }
+        }
+
+        return { nx, ny, nz };
+    }
+
+    getwTopLeftCanvas(inOut) {
+        if (inOut == 'in') {
+            return this.wTopLeftCanvasIn;
+        } else {
+            return this.wTopLeftCanvasOut;
+        }
+    }
+
+    gethTopLeftCanvas(inOut) {
+        if (inOut == 'in') {
+            return this.hTopLeftCanvasIn;
+        } else {
+            return this.hTopLeftCanvasOut;
+        }
+    }
+
+    getBottomRightOfSubcube(subCube, inOut, localGlobal) {
+        let n = this.getSplitParams(inOut);
+        let bottomRight = getBottomRightOfSubcube(subCube, 
+            n.nx, n.ny, n.nz, 
+            this.face, this.leftRightSepSubcubes, this.topBottomSepSubcubes);
+        if (localGlobal == 'local') {
+            return bottomRight;
+        } else {
+            let wBottomRight = bottomRight.wBottomRight + this.getwTopLeftCanvas(inOut);
+            let hBottomRight = bottomRight.hBottomRight + this.gethTopLeftCanvas(inOut);
+            return { wBottomRight, hBottomRight };
+        }
+    }
+
+    getTopLeftOfSubcube(subCube, inOut, localGlobal) {
+        let n = this.getSplitParams(inOut);
+        let topLeft = getTopLeftOfSubcube(subCube, 
+            n.nx, n.ny, n.nz, 
+            this.face, this.leftRightSepSubcubes, this.topBottomSepSubcubes);
+        if (localGlobal == 'local') {
+            return topLeft;
+        } else {
+            let wTopLeft = topLeft.wTopLeft + this.getwTopLeftCanvas(inOut);
+            let hTopLeft = topLeft.hTopLeft + this.gethTopLeftCanvas(inOut);
+            return { wTopLeft, hTopLeft };
+        }
+    }
+
+    getBoxWidthHeight(inOut) {
+        let n = this.getSplitParams(inOut);
+        return getBoxWidthHeight(n.nx, n.ny, n.nz, this.face);
+    }
+
     getWidthHeight() {
-        var subCube, nxIn, nyIn, nzIn, nxOut, nyOut, nzOut;        
+        var subCube;        
         if (this.splitYdir && this.splitZdir) {
             // Four pieces
             subCube = 'BR';
-            nxIn = this.nx;
-            nyIn = this.nyInSubcube;
-            nzIn = this.nzInSubcube;
-            nxOut = this.nxOut;
-            nyOut = this.nyOutSubcube;
-            nzOut = this.nzOutSubcube;
         } else if (this.splitYdir && !this.splitZdir) {
             // Two vertical
             subCube = 'BL';
-            nxIn = this.nx;
-            nyIn = this.nyInSubcube;
-            nzIn = this.nzIn;
-            nxOut = this.nxOut;
-            nyOut = this.nyOutSubcube;
-            nzOut = this.nzOut;
         } else if (!this.splitYdir && this.splitZdir) {
             // Two horizontal
             subCube = 'TR';
-            nxIn = this.nx;
-            nyIn = this.nyIn;
-            nzIn = this.nzInSubcube;
-            nxOut = this.nxOut;
-            nyOut = this.nyOut;
-            nzOut = this.nzOutSubcube;
         } else {
             // One piece
             subCube = 'TL';
-            nxIn = this.nx;
-            nyIn = this.nyIn;
-            nzIn = this.nzIn;
-            nxOut = this.nxOut;
-            nyOut = this.nyOut;
-            nzOut = this.nzOut;
         }
 
-        let brIn = getBottomRightOfSubcube(subCube, 
-            nxIn, nyIn, nzIn, 
-            this.face, this.leftRightSepSubcubes, this.topBottomSepSubcubes);
-        let brOut = getBottomRightOfSubcube(subCube, 
-            nxOut, nyOut, nzOut, 
-            this.face, this.leftRightSepSubcubes, this.topBottomSepSubcubes);
+        let brIn = this.getBottomRightOfSubcube(subCube, 'in', 'local');
+        let brOut = this.getBottomRightOfSubcube(subCube, 'out', 'local');
 
         let widthIn = brIn.wBottomRight;
         let heightIn = brIn.hBottomRight;
@@ -586,7 +658,7 @@ var ds = new DrawingSelections();
 
 function updateParams() {
     var nxNew = parseInt($("#ccnx").val());
-    if (isNaN(nxNew) || nxNew <= 0) {
+    if (isNaN(nxNew) || nxNew <= 0 || nxNew > 10) {
         nxNew = p.nx;
     }
 
@@ -768,7 +840,7 @@ function svgAnimateStop() {
     timeoutID = "";
 }
 
-function svgCreateStr(width, height, pathsGrid, pathsSel) {
+function svgCreateStr(width, height, pathsGrid, pathsSel, texts) {
     var svgStr = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n';
     svgStr += '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" viewBox="0 0 ' + String(width) + ' ' + String(height) + '">\n';
     
@@ -791,6 +863,11 @@ function svgCreateStr(width, height, pathsGrid, pathsSel) {
         svgStr += value.svgStr() + '\n';
     });
     
+    // Texts
+    texts.forEach(function(item, index, array) {
+        svgStr += item.svgStr() + '\n';
+    });
+
     svgStr += '</svg>';
 
     return svgStr;
@@ -947,8 +1024,11 @@ function svgDraw() {
         paths = svgDraw4(p);
     }
 
+    let texts = svgDrawText(p);
+    console.log(texts);
+
     // Draw
-    let svgStr = svgCreateStr(p.widthCanvas,p.heightCanvas,paths.pathsGrid,paths.pathsSel);
+    let svgStr = svgCreateStr(p.widthCanvas,p.heightCanvas,paths.pathsGrid,paths.pathsSel,texts);
     $('#ccSVG').html(svgStr);
 
     // Errors
@@ -969,6 +1049,89 @@ function svgDraw() {
         errs += "Filter does not evenly cover data in vertical direction.<br />";
     }
     $("#ccError").html(errs);
+}
+
+class Text {
+    constructor(text, x, y) {
+        this.text = text;
+        this.x = x;
+        this.y = y;
+    }
+
+    svgStr() {
+        var s = '<text text-anchor="end"';
+        s += ' x="' + String(this.x) + '"'; 
+        s += ' y="' + String(this.y) + '"'; 
+        s += '>';
+        s += this.text;
+        s += '</text>';
+        return s;
+    }
+}
+
+function svgDrawText(p) {
+    var texts = [];
+
+    /*
+    if (p.splitYdir && p.splitZdir) {
+        // 4 pieces
+
+    } else if (p.splitYdir && !p.splitZdir) {
+        // 2 vertical
+    } else if (!p.splitYdir && p.splitZdir) {
+        // 2 horizontal
+    } else {
+        // 1 piece
+        for (let ix = 0; ix < p.nx; ix++) {
+            let x = p.wTopLeftCanvasIn + (ix + 0.5) * p.face.boxDim;
+            let y = p.hTopLeftCanvasIn;
+            texts.push(new Text(String(ix), x, y));
+        }
+
+        for (let iy = 0; iy < p.nyIn; iy++) {
+            let x = p.wTopLeftCanvasIn;
+            let y = p.hTopLeftCanvasIn + (iy + 0.65) * p.face.boxDim;
+            texts.push(new Text(String(iy), x, y));
+        }
+    }
+    */
+
+    var topLeft;
+    if (p.splitYdir) {
+        topLeft = p.getTopLeftOfSubcube('TL','in','global');
+        for (let iy = p.padding; iy < p.nyInSubcube; iy++) {
+            let x = topLeft.wTopLeft;
+            let y = topLeft.hTopLeft + (iy + 0.65) * p.face.boxDim;
+            let text = String(iy-p.padding);
+            texts.push(new Text(text, x, y));
+        }
+
+        topLeft = p.getTopLeftOfSubcube('BL','in','global');
+        for (let iy = 0; iy < p.nyInSubcube-p.padding; iy++) {
+            let x = topLeft.wTopLeft;
+            let y = topLeft.hTopLeft + (iy + 0.65) * p.face.boxDim;
+            let text = String(p.nyIn - p.nyInSubcube - p.padding + iy);
+            texts.push(new Text(text, x, y));
+        }
+    } else {
+        topLeft = p.getTopLeftOfSubcube('TL','in','global');
+        for (let iy = p.padding; iy < p.nyIn-p.padding; iy++) {
+            let x = topLeft.wTopLeft;
+            let y = topLeft.hTopLeft + (iy + 0.65) * p.face.boxDim;
+            let text = String(iy-p.padding);
+            texts.push(new Text(text, x, y));
+        }
+    }
+
+    // X direction text
+    topLeft = p.getTopLeftOfSubcube('TL','in','global');
+    for (let ix = 0; ix < p.nx; ix++) {
+        let x = topLeft.wTopLeft + (ix + 0.5) * p.face.boxDim;
+        let y = topLeft.hTopLeft;
+        texts.push(new Text(String(ix), x, y));
+    }
+
+    return texts;
 }
 
 function svgDraw1(p) {
