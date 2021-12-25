@@ -14,6 +14,9 @@ let selFillOpacity = '1';
 let selStrokeOpacity = '1';
 let selFillInvalidRGB = "rgb(100%,50%,50%)";
 
+let widthCanvasMin = 200;
+let heightCanvasMin = 400;
+
 function selFillValidRGB(iFilter, nFilters) {
     let blueVal = 70 + 30*((nFilters-iFilter-1)/(nFilters-1));
     return 'rgb(50%,50%,' + String(blueVal) + '%)';
@@ -91,7 +94,7 @@ class Face {
 }
 
 class Params {
-    constructor(nx, nyInput, nzInput, padding, nFilters, filterSize, stride) {
+    constructor(nx, nyInput, nzInput, padding, nFilters, filterSize, stride, widthCanvas, heightCanvas) {
         this.nx = nx;
         this.nyInput = nyInput;
         this.nzInput = nzInput;
@@ -99,7 +102,10 @@ class Params {
         this.nFilters = nFilters;
         this.filterSize = filterSize;
         this.stride = stride;
-        
+        this.widthCanvas = Math.max(widthCanvas, widthCanvasMin);
+        this.heightCanvas = Math.max(heightCanvas, heightCanvasMin);
+        console.log("Using width, height for canvas:", this.widthCanvas, this.heightCanvas);
+
         console.log("Changed params: (nx, nyInput, nzInput, padding, nFilters, filterSize, stride) = ",
             this.nx, this.nyInput, this.nzInput, this.padding, this.nFilters, this.filterSize, this.stride);
 
@@ -158,8 +164,8 @@ class Params {
         this.izSelOut = -1;
 
         // Drawing parameters
-        this.wTopLeftCanvas = 100;
-        this.hTopLeftCanvas = 100;
+        this.wTopLeftCanvas = 0;
+        this.hTopLeftCanvas = 0;
 
         // Padding planes
         this.paddingPlanesConstYIn = [];
@@ -200,6 +206,44 @@ class Params {
                 this.invalidPlanesConstZIn.push(iz);
             }
         }
+
+        // Rescale
+        this.rescale();
+    }
+
+    rescale() {
+        // Get current width, height
+        let curr = this.getWidthHeightIn();
+        console.log("Current width,height:", curr.width, curr.height);
+
+        // Scale y
+        // Should be 90% of possible height
+        var scale = (0.9 * this.heightCanvas) / (curr.height);
+        this.topBottomSepSubcubes *= scale;
+        this.face.boxDim *= scale;
+        this.face.hTranslate *= scale;
+
+        // Offset should be 5% each direction
+        this.wTopLeftCanvas = 0.05 * this.widthCanvas;
+        this.hTopLeftCanvas = 0.05 * this.heightCanvas;
+    }
+    
+    getWidthHeightIn() {
+        var width=100, height=100;
+        
+        if (this.splitZdir) {
+            width = this.leftRightSepSubcubes + 2 * (this.nx * this.face.boxDim + this.nzInSubcube * this.face.wTranslate);
+        } else {
+            width = this.nx * this.face.boxDim + this.nzIn * this.face.wTranslate;
+        }
+
+        if (this.splitYdir) {
+            height = this.topBottomSepSubcubes + 2 * (this.nyInSubcube * this.face.boxDim + this.nzInSubcube * this.face.hTranslate);
+        } else {
+            height = this.nyIn * this.face.boxDim + this.nzIn * this.face.hTranslate;
+        }
+
+        return { width, height };
     }
 
     checkSelectionValid() {
@@ -436,48 +480,52 @@ class DrawingSelections {
     }
 }
 
-let nx=3, nyInput=9, nzInput=9, padding=0, nFilters=2, filterSize=4, stride=2;
-var p = new Params(nx, nyInput, nzInput, padding, nFilters, filterSize, stride);
+let nx=3, nyInput=9, nzInput=9, padding=0, nFilters=2, filterSize=4, stride=2, widthCanvas=widthCanvasMin, heightCanvas=heightCanvasMin;
+var p = new Params(nx, nyInput, nzInput, padding, nFilters, filterSize, stride, widthCanvas, heightCanvas);
 var ds = new DrawingSelections();
 
 function updateParams() {
     var nxNew = parseInt($("#ccnx").val());
-    if (isNaN(nxNew)) {
+    if (isNaN(nxNew) || nxNew <= 0) {
         nxNew = p.nx;
     }
 
     var nyInputNew = parseInt($("#ccnyInput").val());
-    if (isNaN(nyInputNew)) {
+    if (isNaN(nyInputNew) || nyInputNew <= 0) {
         nyInputNew = p.nyInput;
     }
 
     var nzInputNew = parseInt($("#ccnzInput").val());
-    if (isNaN(nzInputNew)) {
+    if (isNaN(nzInputNew) || nzInputNew <= 0) {
         nzInputNew = p.nzInput;
     }
 
     paddingNew = parseInt($("#ccpadding").text());
-    if (isNaN(paddingNew)) {
+    if (isNaN(paddingNew) || paddingNew < 0) {
         paddingNew = p.padding;
     }
 
     nFiltersNew = parseInt($("#ccnFilters").text());
-    if (isNaN(nFiltersNew)) {
+    if (isNaN(nFiltersNew) || nFiltersNew < 1) {
         nFiltersNew = p.nFilters;
     }
 
     filterSizeNew = parseInt($("#ccfilterSize").text());
-    if (isNaN(filterSizeNew)) {
+    if (isNaN(filterSizeNew) || filterSizeNew < 1) {
         filterSizeNew = p.filterSize;
     }
 
     strideNew = parseInt($("#ccstride").text());
-    if (isNaN(strideNew)) {
+    if (isNaN(strideNew) || strideNew < 1) {
         strideNew = p.stride;
     }
 
+    let widthCanvas = $("#ccSVG").width();
+    let heightCanvas = $("#ccSVG").height();
+    console.log("Width, height of canvas: ", widthCanvas, heightCanvas);
+
     // Update params
-    p = new Params(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew);
+    p = new Params(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew, widthCanvas, heightCanvas);
 
     // Errors
     var errs = "";
