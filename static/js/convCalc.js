@@ -126,7 +126,6 @@ class Params {
         this.nzInSubcube = this.stride + this.filterSize;
         this.nyOutSubcube = 2; // always
         this.nzOutSubcube = 2; // always
-        console.log("Subcube: (ny,nz) = ", this.nyInSubcube, this.nzInSubcube);
 
         // Face
         let faceBoxDim = 50;
@@ -152,8 +151,6 @@ class Params {
         // Padding for drawing hidden parts on the input
         let nyInCalculatedFromNyOut = this.stride*this.nyOut + this.filterSize;
         let nzInCalculatedFromNzOut = this.stride*this.nzOut + this.filterSize;
-        console.log('nyInCalculatedFromNyOut',nyInCalculatedFromNyOut);
-        console.log('nyIn',this.nyIn);
         this.nyPadSelEndIn = nyInCalculatedFromNyOut - this.nyIn;
         this.nzPadSelEndIn = nzInCalculatedFromNzOut - this.nzIn;
         this.nyPadSelEndOut = 0;
@@ -221,24 +218,20 @@ class Params {
     rescale() {
         // Get current width, height
         let curr = this.getWidthHeight();
-        console.log("Current widthIn,heightIn,widthOut,heightOut:", curr.widthIn, curr.heightIn, curr.widthOut, curr.heightOut);
 
         // Height should be 80% of possible height
         // Width should be 80 % of half of page width for in,out
         let drawingHeight = 0.8 * this.heightCanvas;
         let drawingWidth = 0.5 * 0.8 * this.widthCanvas;
-        console.log("Available size for width, height of each drawing: ", drawingWidth, drawingHeight);
-
+        
         // Scaling
         // Find smallest rescaling factor
         var scaleHeightIn = drawingHeight / curr.heightIn;
         var scaleHeightOut = drawingHeight / curr.heightOut;
         var scaleWidthIn = drawingWidth / curr.widthIn;
         var scaleWidthOut = drawingWidth / curr.widthOut;
-        console.log("Scalings: (heightIn, heightOut, widthIn, widthOut)",scaleHeightIn,scaleHeightOut,scaleWidthIn,scaleWidthOut);
         let scale = Math.min(scaleHeightIn, scaleHeightOut, scaleWidthIn, scaleWidthOut);
-        console.log("Going with scale factor: ", scale);
-
+        
         // Scale everything
         this.leftRightSepSubcubes *= scale;
         this.topBottomSepSubcubes *= scale;
@@ -246,18 +239,11 @@ class Params {
         this.face.wTranslate *= scale;
         this.face.hTranslate *= scale;
 
-        // Resulting width, height
-        let res = this.getWidthHeight();
-        console.log("Resulting widthIn,heightIn,widthOut,heightOut:", res.widthIn, res.heightIn, res.widthOut, res.heightOut);
-
         // Offset
         this.wTopLeftCanvasIn = 0.5 * 0.1 * this.widthCanvas;
         this.hTopLeftCanvasIn = 0.1 * this.heightCanvas;
         this.wTopLeftCanvasOut = 0.5 * this.widthCanvas + 0.5 * 0.1 * this.widthCanvas;
         this.hTopLeftCanvasOut = 0.1 * this.heightCanvas;
-
-        console.log("TopLeft In:", this.wTopLeftCanvasIn, this.hTopLeftCanvasIn);
-        console.log("TopLeft Out:", this.wTopLeftCanvasOut, this.hTopLeftCanvasOut);
     }
 
     getPadding(inOut) {
@@ -501,7 +487,6 @@ class DrawingSelections {
         var idsBottomLayerNew = []
         // IF the selection is sticking out in the z direction
         if (izSelIn + p.filterSize > p.nzIn) {
-            console.log("Selection is sticking out in the z direction; hiding some of the grid");
             // Hide all the grid front elements below
             for (let ix = 0; ix < p.nx; ix++) { 
                 for (let iy= iySelIn + p.filterSize; iy < p.nyIn; iy++) {
@@ -511,10 +496,6 @@ class DrawingSelections {
         }
         if (idsBottomLayerNew.toString() != this.idsBottomLayer.toString()) {
             // Redraw grid to correct order for selection that is sticking out the front
-            console.log("Redrawing grid to correct order for selection that is sticking out the front");
-            console.log('idsBottomLayer',this.idsBottomLayer);
-            console.log('idsBottomLayerNew',idsBottomLayerNew);
-    
             this.idsBottomLayer = idsBottomLayerNew;
             svgDraw();
         }
