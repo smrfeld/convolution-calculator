@@ -134,8 +134,8 @@ class Params {
         this.face = new Face(faceDx, faceDy, faceBoxDim);
 
         // Seperation in x between subcubes
-        this.leftRightSepSubcubes = 10;
-        this.topBottomSepSubcubes = 10;
+        this.leftRightSepSubcubes = 20;
+        this.topBottomSepSubcubes = 20;
 
         // Output dimensions
         this.nyOutTheory = (this.nyInput - this.filterSize + 2*this.padding)/this.stride + 1;
@@ -218,10 +218,10 @@ class Params {
         let curr = this.getWidthHeight();
         console.log("Current widthIn,heightIn,widthOut,heightOut:", curr.widthIn, curr.heightIn, curr.widthOut, curr.heightOut);
 
-        // Height should be 90% of possible height
-        // Width should be 90 % of half of page width for in,out
-        let drawingHeight = 0.9 * this.heightCanvas;
-        let drawingWidth = 0.5 * 0.9 * this.widthCanvas;
+        // Height should be 80% of possible height
+        // Width should be 80 % of half of page width for in,out
+        let drawingHeight = 0.8 * this.heightCanvas;
+        let drawingWidth = 0.5 * 0.8 * this.widthCanvas;
         console.log("Available size for width, height of each drawing: ", drawingWidth, drawingHeight);
 
         // Scaling
@@ -246,10 +246,10 @@ class Params {
         console.log("Resulting widthIn,heightIn,widthOut,heightOut:", res.widthIn, res.heightIn, res.widthOut, res.heightOut);
 
         // Offset
-        this.wTopLeftCanvasIn = 0.5 * 0.05 * this.widthCanvas;
-        this.hTopLeftCanvasIn = 0.05 * this.heightCanvas;
-        this.wTopLeftCanvasOut = 0.5 * this.widthCanvas + 0.5 * 0.05 * this.widthCanvas;
-        this.hTopLeftCanvasOut = 0.05 * this.heightCanvas;
+        this.wTopLeftCanvasIn = 0.5 * 0.1 * this.widthCanvas;
+        this.hTopLeftCanvasIn = 0.1 * this.heightCanvas;
+        this.wTopLeftCanvasOut = 0.5 * this.widthCanvas + 0.5 * 0.1 * this.widthCanvas;
+        this.hTopLeftCanvasOut = 0.1 * this.heightCanvas;
 
         console.log("TopLeft In:", this.wTopLeftCanvasIn, this.hTopLeftCanvasIn);
         console.log("TopLeft Out:", this.wTopLeftCanvasOut, this.hTopLeftCanvasOut);
@@ -1052,19 +1052,29 @@ function svgDraw() {
 }
 
 class Text {
-    constructor(text, x, y) {
+    constructor(text, x, y, rotate, anchor) {
         this.text = text;
         this.x = x;
         this.y = y;
+        this.rotate = rotate;
+        this.anchor = anchor;
     }
 
     svgStr() {
-        var s = '<text text-anchor="end"';
+        /*
+        var s = '<text text-anchor="end" transform="rotate(0)"';
         s += ' x="' + String(this.x) + '"'; 
         s += ' y="' + String(this.y) + '"'; 
         s += '>';
         s += this.text;
         s += '</text>';
+        return s;
+        */
+        var s = '<g transform="translate(' + String(this.x) + ',' + String(this.y) + ')">\n';
+        s += '<text text-anchor="' + this.anchor + '" font-size="small"';
+        s += 'transform="rotate(' + this.rotate + ')">';
+        s += this.text;
+        s += '</text>\n</g>';
         return s;
     }
 }
@@ -1072,65 +1082,87 @@ class Text {
 function svgDrawText(p) {
     var texts = [];
 
-    /*
-    if (p.splitYdir && p.splitZdir) {
-        // 4 pieces
+    var topLeft, iyLocalStart, iyLocalEnd, iyGlobalStart;
 
-    } else if (p.splitYdir && !p.splitZdir) {
-        // 2 vertical
-    } else if (!p.splitYdir && p.splitZdir) {
-        // 2 horizontal
-    } else {
-        // 1 piece
-        for (let ix = 0; ix < p.nx; ix++) {
-            let x = p.wTopLeftCanvasIn + (ix + 0.5) * p.face.boxDim;
-            let y = p.hTopLeftCanvasIn;
-            texts.push(new Text(String(ix), x, y));
-        }
-
-        for (let iy = 0; iy < p.nyIn; iy++) {
-            let x = p.wTopLeftCanvasIn;
-            let y = p.hTopLeftCanvasIn + (iy + 0.65) * p.face.boxDim;
-            texts.push(new Text(String(iy), x, y));
-        }
-    }
-    */
-
-    var topLeft;
+    // Y direction text
     if (p.splitYdir) {
         topLeft = p.getTopLeftOfSubcube('TL','in','global');
-        for (let iy = p.padding; iy < p.nyInSubcube; iy++) {
-            let x = topLeft.wTopLeft;
-            let y = topLeft.hTopLeft + (iy + 0.65) * p.face.boxDim;
-            let text = String(iy-p.padding);
-            texts.push(new Text(text, x, y));
-        }
+        iyLocalStart = p.padding;
+        iyLocalEnd = p.nyInSubcube;
+        iyGlobalStart = 0;
+        texts = texts.concat(svgDrawTextY(iyLocalStart, iyLocalEnd, iyGlobalStart, topLeft, p.face));
 
         topLeft = p.getTopLeftOfSubcube('BL','in','global');
-        for (let iy = 0; iy < p.nyInSubcube-p.padding; iy++) {
-            let x = topLeft.wTopLeft;
-            let y = topLeft.hTopLeft + (iy + 0.65) * p.face.boxDim;
-            let text = String(p.nyIn - p.nyInSubcube - p.padding + iy);
-            texts.push(new Text(text, x, y));
-        }
+        iyLocalStart = 0;
+        iyLocalEnd = p.nyInSubcube - p.padding;
+        iyGlobalStart = p.nyIn - p.nyInSubcube - p.padding;
+        texts = texts.concat(svgDrawTextY(iyLocalStart, iyLocalEnd, iyGlobalStart, topLeft, p.face));
     } else {
         topLeft = p.getTopLeftOfSubcube('TL','in','global');
-        for (let iy = p.padding; iy < p.nyIn-p.padding; iy++) {
-            let x = topLeft.wTopLeft;
-            let y = topLeft.hTopLeft + (iy + 0.65) * p.face.boxDim;
-            let text = String(iy-p.padding);
-            texts.push(new Text(text, x, y));
-        }
+        iyLocalStart = p.padding;
+        iyLocalEnd = p.nyIn - p.padding;
+        iyGlobalStart = 0;
+        texts = texts.concat(svgDrawTextY(iyLocalStart, iyLocalEnd, iyGlobalStart, topLeft, p.face));
+    }
+
+    // Z direction text
+    var izLocalStart, izLocalEnd, izGlobalStart;
+    if (p.splitZdir) {
+        topLeft = p.getTopLeftOfSubcube('TL','in','global');
+        izLocalStart = p.padding;
+        izLocalEnd = p.nzInSubcube;
+        izGlobalStart = 0;
+        texts = texts.concat(svgDrawTextZ(izLocalStart, izLocalEnd, izGlobalStart, p.nx, topLeft, p.face));
+
+        topLeft = p.getTopLeftOfSubcube('TR','in','global');
+        izLocalStart = 0;
+        izLocalEnd = p.nzInSubcube - p.padding;
+        izGlobalStart = p.nzIn - p.nzInSubcube - p.padding;
+        texts = texts.concat(svgDrawTextZ(izLocalStart, izLocalEnd, izGlobalStart, p.nx, topLeft, p.face));
+    } else {
+        topLeft = p.getTopLeftOfSubcube('TL','in','global');
+        izLocalStart = p.padding;
+        izLocalEnd = p.nzIn - p.padding;
+        izGlobalStart = 0;
+        texts = texts.concat(svgDrawTextZ(izLocalStart, izLocalEnd, izGlobalStart, p.nx, topLeft, p.face));
     }
 
     // X direction text
     topLeft = p.getTopLeftOfSubcube('TL','in','global');
-    for (let ix = 0; ix < p.nx; ix++) {
-        let x = topLeft.wTopLeft + (ix + 0.5) * p.face.boxDim;
-        let y = topLeft.hTopLeft;
-        texts.push(new Text(String(ix), x, y));
-    }
+    texts = texts.concat(svgDrawTextX(p.nx, topLeft, p.face));
 
+    return texts;
+}
+
+function svgDrawTextY(iyLocalStart, iyLocalEnd, iyGlobalStart, topLeft, face) {
+    var texts = [];
+    for (let iy = iyLocalStart; iy < iyLocalEnd; iy++) {
+        let x = topLeft.wTopLeft - 5;
+        let y = topLeft.hTopLeft + (iy + 0.65) * face.boxDim;
+        let text = String(iyGlobalStart + iy - iyLocalStart);
+        texts.push(new Text(text, x, y, 0, "end"));
+    }
+    return texts;
+}
+
+function svgDrawTextX(nx, topLeft, face) {
+    var texts = [];
+    for (let ix = 0; ix < nx; ix++) {
+        let x = topLeft.wTopLeft + (ix + 0.5) * face.boxDim;
+        let y = topLeft.hTopLeft - 5;
+        texts.push(new Text(String(ix), x, y, 0, "end"));
+    }
+    return texts;
+}
+
+function svgDrawTextZ(izLocalStart, izLocalEnd, izGlobalStart, nx, topLeft, face) {
+    var texts = [];
+    for (let iz = izLocalStart; iz < izLocalEnd; iz++) {
+        let x = topLeft.wTopLeft + nx * face.boxDim + (iz + 1.65) * face.wTranslate;
+        let y = topLeft.hTopLeft + (iz+0.7) * face.hTranslate;
+        let text = String(izGlobalStart + iz - izLocalStart);
+        texts.push(new Text(text, x, y, -20, "start"));
+    }
     return texts;
 }
 
