@@ -14,8 +14,8 @@ let selFillOpacity = '1';
 let selStrokeOpacity = '1';
 let selFillInvalidRGB = "rgb(100%,50%,50%)";
 
-let widthCanvasMin = 200;
-let heightCanvasMin = 400;
+let widthCanvasMin = 400;
+let heightCanvasMin = 200;
 
 function selFillValidRGB(iFilter, nFilters) {
     let blueVal = 70 + 30*((nFilters-iFilter-1)/(nFilters-1));
@@ -213,37 +213,57 @@ class Params {
 
     rescale() {
         // Get current width, height
-        let curr = this.getWidthHeightIn();
-        console.log("Current width,height:", curr.width, curr.height);
+        let curr = this.getWidthHeight();
+        console.log("Current widthIn,heightIn,widthOut,heightOut:", curr.widthIn, curr.heightIn, curr.widthOut, curr.heightOut);
 
-        // Scale y
-        // Should be 90% of possible height
-        var scale = (0.9 * this.heightCanvas) / (curr.height);
+        // Height should be 90% of possible height
+        // Width should be 90 % of half of page width for in,out
+        let goalHeight = 0.9 * this.heightCanvas;
+        let goalWidth = 0.5 * 0.9 * this.widthCanvas;
+        console.log("Goal height, width of each in&out: ", goalWidth, goalHeight);
+
+        // Scaling
+        // Find smallest rescaling factor
+        var scaleHeightIn = goalHeight / curr.heightIn;
+        var scaleHeightOut = goalHeight / curr.heightOut;
+        var scaleWidthIn = goalWidth / curr.widthIn;
+        var scaleWidthOut = goalWidth / curr.widthOut;
+        console.log("Scalings: (heightIn, heightOut, widthIn, widthOut)",scaleHeightIn,scaleHeightOut,scaleWidthIn,scaleWidthOut);
+        let scale = Math.min(scaleHeightIn, scaleHeightOut, scaleWidthIn, scaleWidthOut);
+        console.log("Going with scale factor: ", scale);
+
+        // Scale everything
+        this.leftRightSepSubcubes *= scale;
         this.topBottomSepSubcubes *= scale;
         this.face.boxDim *= scale;
+        this.face.wTranslate *= scale;
         this.face.hTranslate *= scale;
 
-        // Offset should be 5% each direction
-        this.wTopLeftCanvas = 0.05 * this.widthCanvas;
+        // Offset
+        this.wTopLeftCanvas = 0.5 * 0.05 * this.widthCanvas;
         this.hTopLeftCanvas = 0.05 * this.heightCanvas;
     }
     
-    getWidthHeightIn() {
-        var width=100, height=100;
+    getWidthHeight() {
+        var widthIn=100, heightIn=100, widthOut=100, heightOut=100;
         
         if (this.splitZdir) {
-            width = this.leftRightSepSubcubes + 2 * (this.nx * this.face.boxDim + this.nzInSubcube * this.face.wTranslate);
+            widthIn = this.leftRightSepSubcubes + 2 * (this.nx * this.face.boxDim + this.nzInSubcube * this.face.wTranslate);
+            widthOut = this.leftRightSepSubcubes + 2 * (this.nxOut * this.face.boxDim + this.nzOutSubcube * this.face.wTranslate);
         } else {
-            width = this.nx * this.face.boxDim + this.nzIn * this.face.wTranslate;
+            widthIn = this.nx * this.face.boxDim + this.nzIn * this.face.wTranslate;
+            widthOut = this.nxOut * this.face.boxDim + this.nzOut * this.face.wTranslate;
         }
 
         if (this.splitYdir) {
-            height = this.topBottomSepSubcubes + 2 * (this.nyInSubcube * this.face.boxDim + this.nzInSubcube * this.face.hTranslate);
+            heightIn = this.topBottomSepSubcubes + 2 * (this.nyInSubcube * this.face.boxDim + this.nzInSubcube * this.face.hTranslate);
+            heightOut = this.topBottomSepSubcubes + 2 * (this.nyOutSubcube * this.face.boxDim + this.nzOutSubcube * this.face.hTranslate);
         } else {
-            height = this.nyIn * this.face.boxDim + this.nzIn * this.face.hTranslate;
+            heightIn = this.nyIn * this.face.boxDim + this.nzIn * this.face.hTranslate;
+            heightOut = this.nyOut * this.face.boxDim + this.nzOut * this.face.hTranslate;
         }
 
-        return { width, height };
+        return { widthIn, heightIn, widthOut, heightOut };
     }
 
     checkSelectionValid() {
@@ -480,8 +500,8 @@ class DrawingSelections {
     }
 }
 
-let nx=3, nyInput=9, nzInput=9, padding=0, nFilters=2, filterSize=4, stride=2, widthCanvas=widthCanvasMin, heightCanvas=heightCanvasMin;
-var p = new Params(nx, nyInput, nzInput, padding, nFilters, filterSize, stride, widthCanvas, heightCanvas);
+// Params
+var p;
 var ds = new DrawingSelections();
 
 function updateParams() {
@@ -526,25 +546,6 @@ function updateParams() {
 
     // Update params
     p = new Params(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew, widthCanvas, heightCanvas);
-
-    // Errors
-    var errs = "";
-    if (p.stride > p.filterSize) {
-        errs += "Stride is larger than the filter size => data in the input is skipped.<br />";
-    }
-    
-    if (p.padding >= p.filterSize) {
-        errs += "Padding is greater or equal to filter size => some filters are not covering any data at all, only padding.<br />"
-    }
-
-    if (!Number.isInteger(p.nzOutTheory)) {
-        errs += "Filter does not evenly cover data in horizontal direction.<br />";
-    }
-
-    if (!Number.isInteger(p.nyOutTheory)) {
-        errs += "Filter does not evenly cover data in vertical direction.<br />";
-    }
-    $("#ccError").html(errs);
 
     // Redraw
     svgDraw();
@@ -864,6 +865,25 @@ function svgDraw() {
     } else if ((p.splitYdir) && (p.splitZdir)) {
         svgDraw4(p);
     }
+
+    // Errors
+    var errs = "";
+    if (p.stride > p.filterSize) {
+        errs += "Stride is larger than the filter size => data in the input is skipped.<br />";
+    }
+    
+    if (p.padding >= p.filterSize) {
+        errs += "Padding is greater or equal to filter size => some filters are not covering any data at all, only padding.<br />"
+    }
+
+    if (!Number.isInteger(p.nzOutTheory)) {
+        errs += "Filter does not evenly cover data in horizontal direction.<br />";
+    }
+
+    if (!Number.isInteger(p.nyOutTheory)) {
+        errs += "Filter does not evenly cover data in vertical direction.<br />";
+    }
+    $("#ccError").html(errs);
 }
 
 function svgDraw1(p) {
@@ -1160,3 +1180,21 @@ function svgDraw2horizInOut(
     let pathsSel = new Map(function*() { yield* pathsSelInTL; yield* pathsSelInTR; }());
     return { pathsGrid, pathsSel };
 }
+
+/*
+function setUIfromParams() {
+    $("#ccnx").val(String(p.nx));
+    $("#ccnyInput").val(String(p.nyInput));
+    $("#ccnzInput").val(String(p.nzInput));
+    $("#ccpadding").text(String(p.padding));
+    $("#ccnFilters").text(String(p.nFilters));
+    $("#ccfilterSize").text(String(p.filterSize));
+    $("#ccstride").text(String(p.stride));
+
+    // Draw
+    svgDraw();
+}
+
+// Update UI
+setUIfromParams();
+*/
