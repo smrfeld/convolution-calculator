@@ -685,6 +685,16 @@ function updateParams() {
         filterSizeNew = p.filterSize;
     }
 
+    // Limits on filter size
+    if (filterSizeNew > nyInputNew + 2*paddingNew) {
+        filterSizeNew = nyInputNew + 2*paddingNew;
+        $("#ccfilterSize").html(String(filterSizeNew));
+    }
+    if (filterSizeNew > nzInputNew + 2*paddingNew) {
+        filterSizeNew = nzInputNew + 2*paddingNew;
+        $("#ccfilterSize").html(String(filterSizeNew));
+    }
+
     strideNew = parseInt($("#ccstride").text());
     if (isNaN(strideNew) || strideNew < 1) {
         strideNew = p.stride;
@@ -712,7 +722,6 @@ function filterSizeSub() {
     p.filterSize = Math.max(p.filterSize,1);
     $('#ccfilterSize').html(String(p.filterSize));
     updateParams();
-
 }
 
 function strideAdd() {
