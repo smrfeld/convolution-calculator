@@ -52,7 +52,7 @@
         <script>
             $(document).ready(function() {
                 // Trigger the draw method on lead
-                updateParams();
+                updateParamsFromUserInput();
             });
         </script>
 
@@ -63,7 +63,7 @@
                         <h3>nx:</h3>
                     </div>
                     <div class="col-sm-10">
-                        <input type="text" class="enter" value="3" id="ccnx" onchange="updateParams();"
+                        <input type="text" class="enter" value="3" id="ccnx" onchange="updateParamsFromUserInput();"
                             onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
                     </div>
                 </div>
@@ -73,7 +73,7 @@
                         <h3>ny:</h3>
                     </div>
                     <div class="col-sm-10">
-                        <input type="text" class="enter" value="6" id="ccnyInput" onchange="updateParams();"
+                        <input type="text" class="enter" value="6" id="ccnyInput" onchange="updateParamsFromUserInput();"
                             onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
                     </div>
                 </div>
@@ -83,7 +83,7 @@
                         <h3>nz:</h3>
                     </div>
                     <div class="col-sm-10">
-                        <input type="text" class="enter" value="6" id="ccnzInput" onchange="updateParams();"
+                        <input type="text" class="enter" value="6" id="ccnzInput" onchange="updateParamsFromUserInput();"
                             onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
                     </div>
                 </div>

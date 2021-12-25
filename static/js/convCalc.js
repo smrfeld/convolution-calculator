@@ -203,10 +203,14 @@ class Params {
         // Skipped inputs
         if (this.stride > this.filterSize) {
             for (let iy=this.filterSize; iy<this.nyIn; iy+=this.stride) {
-                this.invalidPlanesConstYIn.push(iy);
+                for (let iy0=iy; iy0<iy+this.stride-this.filterSize; iy0++) {
+                    this.invalidPlanesConstYIn.push(iy0);
+                }
             }
             for (let iz=this.filterSize; iz<this.nzIn; iz+=this.stride) {
-                this.invalidPlanesConstZIn.push(iz);
+                for (let iz0=iz; iz0<iz+this.stride-this.filterSize; iz0++) {
+                    this.invalidPlanesConstZIn.push(iz0);
+                }
             }
         }
 
@@ -254,6 +258,14 @@ class Params {
 
         console.log("TopLeft In:", this.wTopLeftCanvasIn, this.hTopLeftCanvasIn);
         console.log("TopLeft Out:", this.wTopLeftCanvasOut, this.hTopLeftCanvasOut);
+    }
+
+    getPadding(inOut) {
+        if (inOut == 'in') {
+            return this.padding;
+        } else {
+            return 0;
+        }
     }
 
     getN(inOut) {
@@ -651,116 +663,117 @@ class DrawingSelections {
 }
 
 // Params
-var p;
+var p = NaN;
 var ds = new DrawingSelections();
 
-function updateParams() {
+function updateParamsFromUserInput() {
     var nxNew = parseInt($("#ccnx").val());
+    var nyInputNew = parseInt($("#ccnyInput").val());
+    var nzInputNew = parseInt($("#ccnzInput").val());
+    var paddingNew = parseInt($("#ccpadding").text());
+    var nFiltersNew = parseInt($("#ccnFilters").text());
+    var filterSizeNew = parseInt($("#ccfilterSize").text());
+    var strideNew = parseInt($("#ccstride").text());
+    let widthCanvas = $("#ccSVG").width();
+    let heightCanvas = $("#ccSVG").height();
+    updateParams(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew, widthCanvas, heightCanvas);
+}
+
+function updateUserFromParams() {
+    $("#ccfilterSize").html(String(p.filterSize));
+    $('#ccstride').html(String(p.stride));
+    $('#ccpadding').html(String(p.padding));
+    $('#ccnFilters').html(String(p.nFilters));
+}
+
+function updateParams(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew, widthCanvas, heightCanvas) {
     if (isNaN(nxNew) || nxNew <= 0 || nxNew > 10) {
         nxNew = p.nx;
     }
-
-    var nyInputNew = parseInt($("#ccnyInput").val());
     if (isNaN(nyInputNew) || nyInputNew <= 0) {
         nyInputNew = p.nyInput;
     }
 
-    var nzInputNew = parseInt($("#ccnzInput").val());
     if (isNaN(nzInputNew) || nzInputNew <= 0) {
         nzInputNew = p.nzInput;
     }
 
-    paddingNew = parseInt($("#ccpadding").text());
     if (isNaN(paddingNew) || paddingNew < 0) {
         paddingNew = p.padding;
     }
 
-    nFiltersNew = parseInt($("#ccnFilters").text());
     if (isNaN(nFiltersNew) || nFiltersNew < 1) {
         nFiltersNew = p.nFilters;
     }
 
-    filterSizeNew = parseInt($("#ccfilterSize").text());
-    if (isNaN(filterSizeNew) || filterSizeNew < 1) {
+    if (isNaN(filterSizeNew) || filterSizeNew < 1 || filterSizeNew > 20) {
         filterSizeNew = p.filterSize;
     }
 
     // Limits on filter size
     if (filterSizeNew > nyInputNew + 2*paddingNew) {
         filterSizeNew = nyInputNew + 2*paddingNew;
-        $("#ccfilterSize").html(String(filterSizeNew));
     }
     if (filterSizeNew > nzInputNew + 2*paddingNew) {
         filterSizeNew = nzInputNew + 2*paddingNew;
-        $("#ccfilterSize").html(String(filterSizeNew));
     }
 
-    strideNew = parseInt($("#ccstride").text());
     if (isNaN(strideNew) || strideNew < 1) {
         strideNew = p.stride;
     }
 
-    let widthCanvas = $("#ccSVG").width();
-    let heightCanvas = $("#ccSVG").height();
-    console.log("Width, height of canvas: ", widthCanvas, heightCanvas);
+    // Limit stride to filter size + 1 to demonstrate error
+    // Else input plots can become too large
+    if (strideNew > filterSizeNew + 1) {
+        strideNew = filterSizeNew + 1;
+    }
 
-    // Update params
-    p = new Params(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew, widthCanvas, heightCanvas);
+    // Update params only if something changed
+    if (isNaN(p) || nxNew != p.nx || nyInputNew != p.nyInput || nzInputNew != p.nzInput 
+        || paddingNew != p.padding || nFiltersNew != p.nFilters || filterSizeNew != p.filterSize
+        || strideNew != p.stride || widthCanvas != p.widthCanvas || heightCanvas != p.heightCanvas) {
+        
+        // Update params
+        p = new Params(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew, widthCanvas, heightCanvas);
 
-    // Redraw
-    svgDraw();
+        // Update user display
+        updateUserFromParams(p);
+
+        // Redraw
+        svgDraw();
+    }
 }
 
 function filterSizeAdd() {
-    p.filterSize += 1;
-    $('#ccfilterSize').html(String(p.filterSize));
-    updateParams();
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters, p.filterSize+1, p.stride, p.widthCanvas, p.heightCanvas);
 }
 
 function filterSizeSub() {
-    p.filterSize -= 1;
-    p.filterSize = Math.max(p.filterSize,1);
-    $('#ccfilterSize').html(String(p.filterSize));
-    updateParams();
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters, p.filterSize-1, p.stride, p.widthCanvas, p.heightCanvas);
 }
 
 function strideAdd() {
-    p.stride += 1;
-    $('#ccstride').html(String(p.stride));
-    updateParams();
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters, p.filterSize, p.stride+1, p.widthCanvas, p.heightCanvas);
 }
 
 function strideSub() {
-    p.stride -= 1;
-    p.stride = Math.max(p.stride,1);
-    $('#ccstride').html(String(p.stride));
-    updateParams();
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters, p.filterSize, p.stride-1, p.widthCanvas, p.heightCanvas);
 }
 
 function paddingAdd() {
-    p.padding += 1;
-    $('#ccpadding').html(String(p.padding));
-    updateParams();
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding+1, p.nFilters, p.filterSize, p.stride, p.widthCanvas, p.heightCanvas);
 }
 
 function paddingSub() {
-    p.padding -= 1;
-    p.padding = Math.max(p.padding,0);
-    $('#ccpadding').html(String(p.padding));
-    updateParams();
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding-1, p.nFilters, p.filterSize, p.stride-1, p.widthCanvas, p.heightCanvas);
 }
 
 function nFiltersAdd() {
-    p.nFilters += 1;
-    $('#ccnFilters').html(String(p.nFilters));
-    updateParams();
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters+1, p.filterSize, p.stride-1, p.widthCanvas, p.heightCanvas);
 }
 
 function nFiltersSub() {
-    p.nFilters -= 1;
-    p.nFilters = Math.max(p.nFilters,1);
-    $('#ccnFilters').html(String(p.nFilters));
-    updateParams();
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters-1, p.filterSize, p.stride-1, p.widthCanvas, p.heightCanvas);
 }
 
 function svgResetAndRedraw() {
@@ -1091,26 +1104,27 @@ function svgDrawText(p, inOut) {
     var texts = [];
 
     let n = p.getN(inOut);
+    let padding = p.getPadding(inOut);
 
     var topLeft, iyLocalStart, iyLocalEnd, iyGlobalStart;
 
     // Y direction text
     if (p.splitYdir) {
         topLeft = p.getTopLeftOfSubcube('TL',inOut,'global');
-        iyLocalStart = p.padding;
+        iyLocalStart = padding;
         iyLocalEnd = n.nySubcube;
         iyGlobalStart = 0;
         texts = texts.concat(svgDrawTextY(iyLocalStart, iyLocalEnd, iyGlobalStart, topLeft, p.face));
 
         topLeft = p.getTopLeftOfSubcube('BL',inOut,'global');
         iyLocalStart = 0;
-        iyLocalEnd = n.nySubcube - p.padding;
-        iyGlobalStart = n.ny - n.nySubcube - p.padding;
+        iyLocalEnd = n.nySubcube - padding;
+        iyGlobalStart = n.ny - n.nySubcube - padding;
         texts = texts.concat(svgDrawTextY(iyLocalStart, iyLocalEnd, iyGlobalStart, topLeft, p.face));
     } else {
         topLeft = p.getTopLeftOfSubcube('TL',inOut,'global');
-        iyLocalStart = p.padding;
-        iyLocalEnd = n.ny - p.padding;
+        iyLocalStart = padding;
+        iyLocalEnd = n.ny - padding;
         iyGlobalStart = 0;
         texts = texts.concat(svgDrawTextY(iyLocalStart, iyLocalEnd, iyGlobalStart, topLeft, p.face));
     }
@@ -1119,20 +1133,20 @@ function svgDrawText(p, inOut) {
     var izLocalStart, izLocalEnd, izGlobalStart;
     if (p.splitZdir) {
         topLeft = p.getTopLeftOfSubcube('TL',inOut,'global');
-        izLocalStart = p.padding;
+        izLocalStart = padding;
         izLocalEnd = n.nzSubcube;
         izGlobalStart = 0;
         texts = texts.concat(svgDrawTextZ(izLocalStart, izLocalEnd, izGlobalStart, n.nx, topLeft, p.face));
 
         topLeft = p.getTopLeftOfSubcube('TR',inOut,'global');
         izLocalStart = 0;
-        izLocalEnd = n.nzSubcube - p.padding;
-        izGlobalStart = n.nz - n.nzSubcube - p.padding;
+        izLocalEnd = n.nzSubcube - padding;
+        izGlobalStart = n.nz - n.nzSubcube - padding;
         texts = texts.concat(svgDrawTextZ(izLocalStart, izLocalEnd, izGlobalStart, n.nx, topLeft, p.face));
     } else {
         topLeft = p.getTopLeftOfSubcube('TL',inOut,'global');
-        izLocalStart = p.padding;
-        izLocalEnd = n.nz - p.padding;
+        izLocalStart = padding;
+        izLocalEnd = n.nz - padding;
         izGlobalStart = 0;
         texts = texts.concat(svgDrawTextZ(izLocalStart, izLocalEnd, izGlobalStart, n.nx, topLeft, p.face));
     }
