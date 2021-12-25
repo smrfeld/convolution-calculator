@@ -164,8 +164,10 @@ class Params {
         this.izSelOut = -1;
 
         // Drawing parameters
-        this.wTopLeftCanvas = 0;
-        this.hTopLeftCanvas = 0;
+        this.wTopLeftCanvasIn = 0;
+        this.hTopLeftCanvasIn = 0;
+        this.wTopLeftCanvasOut = 0;
+        this.hTopLeftCanvasOut = 0;
 
         // Padding planes
         this.paddingPlanesConstYIn = [];
@@ -218,16 +220,16 @@ class Params {
 
         // Height should be 90% of possible height
         // Width should be 90 % of half of page width for in,out
-        let goalHeight = 0.9 * this.heightCanvas;
-        let goalWidth = 0.5 * 0.9 * this.widthCanvas;
-        console.log("Goal height, width of each in&out: ", goalWidth, goalHeight);
+        let drawingHeight = 0.9 * this.heightCanvas;
+        let drawingWidth = 0.5 * 0.9 * this.widthCanvas;
+        console.log("Available size for width, height of each drawing: ", drawingWidth, drawingHeight);
 
         // Scaling
         // Find smallest rescaling factor
-        var scaleHeightIn = goalHeight / curr.heightIn;
-        var scaleHeightOut = goalHeight / curr.heightOut;
-        var scaleWidthIn = goalWidth / curr.widthIn;
-        var scaleWidthOut = goalWidth / curr.widthOut;
+        var scaleHeightIn = drawingHeight / curr.heightIn;
+        var scaleHeightOut = drawingHeight / curr.heightOut;
+        var scaleWidthIn = drawingWidth / curr.widthIn;
+        var scaleWidthOut = drawingWidth / curr.widthOut;
         console.log("Scalings: (heightIn, heightOut, widthIn, widthOut)",scaleHeightIn,scaleHeightOut,scaleWidthIn,scaleWidthOut);
         let scale = Math.min(scaleHeightIn, scaleHeightOut, scaleWidthIn, scaleWidthOut);
         console.log("Going with scale factor: ", scale);
@@ -239,29 +241,71 @@ class Params {
         this.face.wTranslate *= scale;
         this.face.hTranslate *= scale;
 
+        // Resulting width, height
+        let res = this.getWidthHeight();
+        console.log("Resulting widthIn,heightIn,widthOut,heightOut:", res.widthIn, res.heightIn, res.widthOut, res.heightOut);
+
         // Offset
-        this.wTopLeftCanvas = 0.5 * 0.05 * this.widthCanvas;
-        this.hTopLeftCanvas = 0.05 * this.heightCanvas;
+        this.wTopLeftCanvasIn = 0.5 * 0.05 * this.widthCanvas;
+        this.hTopLeftCanvasIn = 0.05 * this.heightCanvas;
+        this.wTopLeftCanvasOut = 0.5 * this.widthCanvas + 0.5 * 0.05 * this.widthCanvas;
+        this.hTopLeftCanvasOut = 0.05 * this.heightCanvas;
+
+        console.log("TopLeft In:", this.wTopLeftCanvasIn, this.hTopLeftCanvasIn);
+        console.log("TopLeft Out:", this.wTopLeftCanvasOut, this.hTopLeftCanvasOut);
     }
-    
+
     getWidthHeight() {
-        var widthIn=100, heightIn=100, widthOut=100, heightOut=100;
-        
-        if (this.splitZdir) {
-            widthIn = this.leftRightSepSubcubes + 2 * (this.nx * this.face.boxDim + this.nzInSubcube * this.face.wTranslate);
-            widthOut = this.leftRightSepSubcubes + 2 * (this.nxOut * this.face.boxDim + this.nzOutSubcube * this.face.wTranslate);
+        var subCube, nxIn, nyIn, nzIn, nxOut, nyOut, nzOut;        
+        if (this.splitYdir && this.splitZdir) {
+            // Four pieces
+            subCube = 'BR';
+            nxIn = this.nx;
+            nyIn = this.nyInSubcube;
+            nzIn = this.nzInSubcube;
+            nxOut = this.nxOut;
+            nyOut = this.nyOutSubcube;
+            nzOut = this.nzOutSubcube;
+        } else if (this.splitYdir && !this.splitZdir) {
+            // Two vertical
+            subCube = 'BL';
+            nxIn = this.nx;
+            nyIn = this.nyInSubcube;
+            nzIn = this.nzIn;
+            nxOut = this.nxOut;
+            nyOut = this.nyOutSubcube;
+            nzOut = this.nzOut;
+        } else if (!this.splitYdir && this.splitZdir) {
+            // Two horizontal
+            subCube = 'TR';
+            nxIn = this.nx;
+            nyIn = this.nyIn;
+            nzIn = this.nzInSubcube;
+            nxOut = this.nxOut;
+            nyOut = this.nyOut;
+            nzOut = this.nzOutSubcube;
         } else {
-            widthIn = this.nx * this.face.boxDim + this.nzIn * this.face.wTranslate;
-            widthOut = this.nxOut * this.face.boxDim + this.nzOut * this.face.wTranslate;
+            // One piece
+            subCube = 'TL';
+            nxIn = this.nx;
+            nyIn = this.nyIn;
+            nzIn = this.nzIn;
+            nxOut = this.nxOut;
+            nyOut = this.nyOut;
+            nzOut = this.nzOut;
         }
 
-        if (this.splitYdir) {
-            heightIn = this.topBottomSepSubcubes + 2 * (this.nyInSubcube * this.face.boxDim + this.nzInSubcube * this.face.hTranslate);
-            heightOut = this.topBottomSepSubcubes + 2 * (this.nyOutSubcube * this.face.boxDim + this.nzOutSubcube * this.face.hTranslate);
-        } else {
-            heightIn = this.nyIn * this.face.boxDim + this.nzIn * this.face.hTranslate;
-            heightOut = this.nyOut * this.face.boxDim + this.nzOut * this.face.hTranslate;
-        }
+        let brIn = getBottomRightOfSubcube(subCube, 
+            nxIn, nyIn, nzIn, 
+            this.face, this.leftRightSepSubcubes, this.topBottomSepSubcubes);
+        let brOut = getBottomRightOfSubcube(subCube, 
+            nxOut, nyOut, nzOut, 
+            this.face, this.leftRightSepSubcubes, this.topBottomSepSubcubes);
+
+        let widthIn = brIn.wBottomRight;
+        let heightIn = brIn.hBottomRight;
+        let widthOut = brOut.wBottomRight;
+        let heightOut = brOut.hBottomRight;
 
         return { widthIn, heightIn, widthOut, heightOut };
     }
@@ -319,6 +363,42 @@ class Params {
             this.izSelOut = 0;
         }
     }
+}
+
+function getBoxWidthHeight(nx, ny, nz, face) {
+    let width = nx * face.boxDim + nz * face.wTranslate;
+    let height = ny * face.boxDim + nz * face.hTranslate;
+    return { width, height };
+}
+
+function getTopLeftOfSubcube(subCube, nx, ny, nz, face, leftRightSepSubcubes, topBottomSepSubcubes) {
+    var wTopLeft, hTopLeft;
+    if (subCube == 'TR') {
+        wTopLeft = nz * face.wTranslate + nx * face.boxDim + leftRightSepSubcubes;
+        hTopLeft = nz * face.hTranslate + (face.hTranslate / face.wTranslate) * (nx * face.boxDim + leftRightSepSubcubes);
+    } else if (subCube == 'BL') {
+        wTopLeft = 0;
+        hTopLeft = ny * face.boxDim + nz * face.hTranslate + topBottomSepSubcubes;    
+    } else if (subCube == 'BR') {
+        let wTopLeftTR = nz * face.wTranslate + nx * face.boxDim + leftRightSepSubcubes;
+        let hTopLeftTR = nz * face.hTranslate + (face.hTranslate / face.wTranslate) * (nx * face.boxDim + leftRightSepSubcubes);
+        let wTopLeftBL = 0;
+        let hTopLeftBL = ny * face.boxDim + nz * face.hTranslate + topBottomSepSubcubes;    
+        wTopLeft = wTopLeftTR + wTopLeftBL;
+        hTopLeft = hTopLeftTR + hTopLeftBL;
+    } else if (subCube == 'TL') {
+        wTopLeft = 0;
+        hTopLeft = 0;
+    }
+    return { wTopLeft, hTopLeft };
+}
+
+function getBottomRightOfSubcube(subCube, nx, ny, nz, face, leftRightSepSubcubes, topBottomSepSubcubes) {
+    let topLeft = getTopLeftOfSubcube(subCube, nx, ny, nz, face, leftRightSepSubcubes, topBottomSepSubcubes);
+    let box = getBoxWidthHeight(nx, ny, nz, face);
+    let wBottomRight = topLeft.wTopLeft + box.width;
+    let hBottomRight = topLeft.hTopLeft + box.height;
+    return { wBottomRight, hBottomRight };
 }
 
 class DrawingSelections {
@@ -856,15 +936,20 @@ function svgDrawSel(nxDraw, nyDraw, nzDraw, nyPadSelEndInDraw, nzPadSelEndInDraw
 
 function svgDraw() {
     // Check how many pieces to draw
+    var paths;
     if ((!p.splitYdir) && (!p.splitZdir)) {
-        svgDraw1(p);
+        paths = svgDraw1(p);
     } else if ((p.splitYdir) && (!p.splitZdir)) {
-        svgDraw2vert(p);
+        paths = svgDraw2vert(p);
     } else if ((!p.splitYdir) && (p.splitZdir)) {
-        svgDraw2horiz(p);
+        paths = svgDraw2horiz(p);
     } else if ((p.splitYdir) && (p.splitZdir)) {
-        svgDraw4(p);
+        paths = svgDraw4(p);
     }
+
+    // Draw
+    let svgStr = svgCreateStr(p.widthCanvas,p.heightCanvas,paths.pathsGrid,paths.pathsSel);
+    $('#ccSVG').html(svgStr);
 
     // Errors
     var errs = "";
@@ -892,25 +977,24 @@ function svgDraw1(p) {
     // Draw input
     let iyStartForId = 0;
     let izStartForId = 0;
-    let pathsGridIn = svgDrawGrid(p.nx, p.nyIn, p.nzIn, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId, 
+    let pathsGridIn = svgDrawGrid(p.nx, p.nyIn, p.nzIn, p.wTopLeftCanvasIn, p.hTopLeftCanvasIn, 'in', iyStartForId, izStartForId, 
         p.paddingPlanesConstYIn, p.paddingPlanesConstZIn,
         p.invalidPlanesConstYIn, p.invalidPlanesConstZIn
         );
-    let pathsSelIn = svgDrawSel(p.nx, p.nyIn, p.nzIn, p.nyPadSelEndIn, p.nzPadSelEndIn, p.wTopLeftCanvas, p.hTopLeftCanvas, 'in', iyStartForId, izStartForId);
+    let pathsSelIn = svgDrawSel(p.nx, p.nyIn, p.nzIn, p.nyPadSelEndIn, p.nzPadSelEndIn, p.wTopLeftCanvasIn, p.hTopLeftCanvasIn, 'in', iyStartForId, izStartForId);
 
     // Draw output
     let nInHiddenPadDraw = 0;
-    let pathsGridOut = svgDrawGrid(p.nxOut, p.nyOut, p.nzOut, p.wTopLeftCanvas+500, p.hTopLeftCanvas, 'out', iyStartForId, izStartForId,
+    let pathsGridOut = svgDrawGrid(p.nxOut, p.nyOut, p.nzOut, p.wTopLeftCanvasOut, p.hTopLeftCanvasOut, 'out', iyStartForId, izStartForId,
         p.paddingPlanesConstYOut, p.paddingPlanesConstZOut,
         p.invalidPlanesConstYOut, p.invalidPlanesConstZOut
         );
-    let pathsSelOut = svgDrawSel(p.nxOut, p.nyOut, p.nzOut, nInHiddenPadDraw, nInHiddenPadDraw, p.wTopLeftCanvas+500, p.hTopLeftCanvas, 'out', iyStartForId, izStartForId);
+    let pathsSelOut = svgDrawSel(p.nxOut, p.nyOut, p.nzOut, nInHiddenPadDraw, nInHiddenPadDraw, p.wTopLeftCanvasOut, p.hTopLeftCanvasOut, 'out', iyStartForId, izStartForId);
 
     // Draw
     let pathsGrid = new Map(function*() { yield* pathsGridIn; yield* pathsGridOut; }());
     let pathsSel = new Map(function*() { yield* pathsSelIn; yield* pathsSelOut; }());
-    let svgStr = svgCreateStr(1000,800,pathsGrid,pathsSel);
-    $('#ccSVG').html(svgStr);
+    return { pathsGrid, pathsSel };
 }
 
 function svgDraw4(p) {
@@ -920,7 +1004,7 @@ function svgDraw4(p) {
         p.nx, p.nyIn, p.nzIn,
         p.nyInSubcube, p.nzInSubcube,
         p.face,
-        p.wTopLeftCanvas, p.hTopLeftCanvas,
+        p.wTopLeftCanvasIn, p.hTopLeftCanvasIn,
         p.paddingPlanesConstYIn, p.paddingPlanesConstZIn,
         p.invalidPlanesConstYIn, p.invalidPlanesConstZIn,
         p.nyPadSelEndIn, p.nzPadSelEndIn,
@@ -931,7 +1015,7 @@ function svgDraw4(p) {
         p.nxOut, p.nyOut, p.nzOut,
         p.nyOutSubcube, p.nzOutSubcube,
         p.face,
-        p.wTopLeftCanvas + 500, p.hTopLeftCanvas + 0,
+        p.wTopLeftCanvasOut, p.hTopLeftCanvasOut,
         p.paddingPlanesConstYOut, p.paddingPlanesConstZOut,
         p.invalidPlanesConstYOut, p.invalidPlanesConstZOut,
         p.nyPadSelEndOut, p.nzPadSelEndOut,
@@ -941,8 +1025,7 @@ function svgDraw4(p) {
 
     let pathsGrid = new Map(function*() { yield* pathsIn.pathsGrid; yield* pathsOut.pathsGrid; }());
     let pathsSel = new Map(function*() { yield* pathsIn.pathsSel; yield* pathsOut.pathsSel; }());
-    let svgStr = svgCreateStr(1000,800,pathsGrid,pathsSel);
-    $('#ccSVG').html(svgStr);
+    return { pathsGrid, pathsSel };
 }
 
 function svgDraw4InOut(
@@ -1030,7 +1113,7 @@ function svgDraw2vert(p) {
         p.nx, p.nyIn, p.nzIn,
         p.nyInSubcube,
         p.face,
-        p.wTopLeftCanvas, p.hTopLeftCanvas,
+        p.wTopLeftCanvasIn, p.hTopLeftCanvasIn,
         p.paddingPlanesConstYIn, p.paddingPlanesConstZIn,
         p.invalidPlanesConstYIn, p.invalidPlanesConstZIn,
         p.nyPadSelEndIn, p.nzPadSelEndIn,
@@ -1041,7 +1124,7 @@ function svgDraw2vert(p) {
         p.nxOut, p.nyOut, p.nzOut,
         p.nyOutSubcube,
         p.face,
-        p.wTopLeftCanvas + 500, p.hTopLeftCanvas + 0,
+        p.wTopLeftCanvasOut, p.hTopLeftCanvasOut,
         p.paddingPlanesConstYOut, p.paddingPlanesConstZOut,
         p.invalidPlanesConstYOut, p.invalidPlanesConstZOut,
         p.nyPadSelEndOut, p.nzPadSelEndOut,
@@ -1051,8 +1134,7 @@ function svgDraw2vert(p) {
 
     let pathsGrid = new Map(function*() { yield* pathsIn.pathsGrid; yield* pathsOut.pathsGrid; }());
     let pathsSel = new Map(function*() { yield* pathsIn.pathsSel; yield* pathsOut.pathsSel; }());
-    let svgStr = svgCreateStr(1000,800,pathsGrid,pathsSel);
-    $('#ccSVG').html(svgStr);
+    return { pathsGrid, pathsSel };
 }
 
 function svgDraw2vertInOut(
@@ -1109,7 +1191,7 @@ function svgDraw2horiz(p) {
         p.nx, p.nyIn, p.nzIn,
         p.nzInSubcube,
         p.face,
-        p.wTopLeftCanvas, p.hTopLeftCanvas,
+        p.wTopLeftCanvasIn, p.hTopLeftCanvasIn,
         p.paddingPlanesConstYIn, p.paddingPlanesConstZIn,
         p.invalidPlanesConstYIn, p.invalidPlanesConstZIn,
         p.nyPadSelEndIn, p.nzPadSelEndIn,
@@ -1120,7 +1202,7 @@ function svgDraw2horiz(p) {
         p.nxOut, p.nyOut, p.nzOut,
         p.nzOutSubcube,
         p.face,
-        p.wTopLeftCanvas + 500, p.hTopLeftCanvas + 0,
+        p.wTopLeftCanvasOut, p.hTopLeftCanvasOut,
         p.paddingPlanesConstYOut, p.paddingPlanesConstZOut,
         p.invalidPlanesConstYOut, p.invalidPlanesConstZOut,
         p.nyPadSelEndOut, p.nzPadSelEndOut,
@@ -1130,8 +1212,7 @@ function svgDraw2horiz(p) {
 
     let pathsGrid = new Map(function*() { yield* pathsIn.pathsGrid; yield* pathsOut.pathsGrid; }());
     let pathsSel = new Map(function*() { yield* pathsIn.pathsSel; yield* pathsOut.pathsSel; }());
-    let svgStr = svgCreateStr(1000,800,pathsGrid,pathsSel);
-    $('#ccSVG').html(svgStr);
+    return { pathsGrid, pathsSel };
 }
 
 function svgDraw2horizInOut(
