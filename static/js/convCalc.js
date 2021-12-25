@@ -255,52 +255,49 @@ class Params {
         console.log("TopLeft Out:", this.wTopLeftCanvasOut, this.hTopLeftCanvasOut);
     }
 
+    getN(inOut) {
+        if (inOut == 'in') {
+            return { 
+                nx: this.nx, 
+                ny: this.nyIn, 
+                nz: this.nzIn,
+                nySubcube: this.nyInSubcube,
+                nzSubcube: this.nzInSubcube
+            };
+        } else {
+            return { 
+                nx: this.nxOut, 
+                ny: this.nyOut, 
+                nz: this.nzOut,
+                nySubcube: this.nyOutSubcube,
+                nzSubcube: this.nzOutSubcube
+            };
+        }
+    }
+
     getSplitParams(inOut) {
+        let n = this.getN(inOut);
         var nx, ny, nz;
         if (this.splitYdir && this.splitZdir) {
             // Four pieces
-            if (inOut == 'in') {
-                nx = this.nx;
-                ny = this.nyInSubcube;
-                nz = this.nzInSubcube;
-            } else {
-                nx = this.nxOut;
-                ny = this.nyOutSubcube;
-                nz = this.nzOutSubcube;
-            }
+            nx = n.nx;
+            ny = n.nySubcube;
+            nz = n.nzSubcube;
         } else if (this.splitYdir && !this.splitZdir) {
             // Two vertical
-            if (inOut == 'in') {
-                nx = this.nx;
-                ny = this.nyInSubcube;
-                nz = this.nzIn;
-            } else {
-                nx = this.nxOut;
-                ny = this.nyOutSubcube;
-                nz = this.nzOut;
-            }
+            nx = n.nx;
+            ny = n.nySubcube;
+            nz = n.nz;
         } else if (!this.splitYdir && this.splitZdir) {
             // Two horizontal
-            if (inOut == 'in') {
-                nx = this.nx;
-                ny = this.nyIn;
-                nz = this.nzInSubcube;
-            } else {
-                nx = this.nxOut;
-                ny = this.nyOut;
-                nz = this.nzOutSubcube;
-            }
+            nx = n.nx;
+            ny = n.ny;
+            nz = n.nzSubcube;
         } else {
             // One piece
-            if (inOut == 'in') {
-                nx = this.nx;
-                ny = this.nyIn;
-                nz = this.nzIn;
-            } else {
-                nx = this.nxOut;
-                ny = this.nyOut;
-                nz = this.nzOut;
-            }
+            nx = n.nx;
+            ny = n.ny;
+            nz = n.nz;
         }
 
         return { nx, ny, nz };
@@ -1024,8 +1021,9 @@ function svgDraw() {
         paths = svgDraw4(p);
     }
 
-    let texts = svgDrawText(p);
-    console.log(texts);
+    let textsIn = svgDrawText(p,'in');
+    let textsOut = svgDrawText(p,'out');
+    let texts = textsIn.concat(textsOut);
 
     // Draw
     let svgStr = svgCreateStr(p.widthCanvas,p.heightCanvas,paths.pathsGrid,paths.pathsSel,texts);
@@ -1079,28 +1077,30 @@ class Text {
     }
 }
 
-function svgDrawText(p) {
+function svgDrawText(p, inOut) {
     var texts = [];
+
+    let n = p.getN(inOut);
 
     var topLeft, iyLocalStart, iyLocalEnd, iyGlobalStart;
 
     // Y direction text
     if (p.splitYdir) {
-        topLeft = p.getTopLeftOfSubcube('TL','in','global');
+        topLeft = p.getTopLeftOfSubcube('TL',inOut,'global');
         iyLocalStart = p.padding;
-        iyLocalEnd = p.nyInSubcube;
+        iyLocalEnd = n.nySubcube;
         iyGlobalStart = 0;
         texts = texts.concat(svgDrawTextY(iyLocalStart, iyLocalEnd, iyGlobalStart, topLeft, p.face));
 
-        topLeft = p.getTopLeftOfSubcube('BL','in','global');
+        topLeft = p.getTopLeftOfSubcube('BL',inOut,'global');
         iyLocalStart = 0;
-        iyLocalEnd = p.nyInSubcube - p.padding;
-        iyGlobalStart = p.nyIn - p.nyInSubcube - p.padding;
+        iyLocalEnd = n.nySubcube - p.padding;
+        iyGlobalStart = n.ny - n.nySubcube - p.padding;
         texts = texts.concat(svgDrawTextY(iyLocalStart, iyLocalEnd, iyGlobalStart, topLeft, p.face));
     } else {
-        topLeft = p.getTopLeftOfSubcube('TL','in','global');
+        topLeft = p.getTopLeftOfSubcube('TL',inOut,'global');
         iyLocalStart = p.padding;
-        iyLocalEnd = p.nyIn - p.padding;
+        iyLocalEnd = n.ny - p.padding;
         iyGlobalStart = 0;
         texts = texts.concat(svgDrawTextY(iyLocalStart, iyLocalEnd, iyGlobalStart, topLeft, p.face));
     }
@@ -1108,28 +1108,28 @@ function svgDrawText(p) {
     // Z direction text
     var izLocalStart, izLocalEnd, izGlobalStart;
     if (p.splitZdir) {
-        topLeft = p.getTopLeftOfSubcube('TL','in','global');
+        topLeft = p.getTopLeftOfSubcube('TL',inOut,'global');
         izLocalStart = p.padding;
-        izLocalEnd = p.nzInSubcube;
+        izLocalEnd = n.nzSubcube;
         izGlobalStart = 0;
-        texts = texts.concat(svgDrawTextZ(izLocalStart, izLocalEnd, izGlobalStart, p.nx, topLeft, p.face));
+        texts = texts.concat(svgDrawTextZ(izLocalStart, izLocalEnd, izGlobalStart, n.nx, topLeft, p.face));
 
-        topLeft = p.getTopLeftOfSubcube('TR','in','global');
+        topLeft = p.getTopLeftOfSubcube('TR',inOut,'global');
         izLocalStart = 0;
-        izLocalEnd = p.nzInSubcube - p.padding;
-        izGlobalStart = p.nzIn - p.nzInSubcube - p.padding;
-        texts = texts.concat(svgDrawTextZ(izLocalStart, izLocalEnd, izGlobalStart, p.nx, topLeft, p.face));
+        izLocalEnd = n.nzSubcube - p.padding;
+        izGlobalStart = n.nz - n.nzSubcube - p.padding;
+        texts = texts.concat(svgDrawTextZ(izLocalStart, izLocalEnd, izGlobalStart, n.nx, topLeft, p.face));
     } else {
-        topLeft = p.getTopLeftOfSubcube('TL','in','global');
+        topLeft = p.getTopLeftOfSubcube('TL',inOut,'global');
         izLocalStart = p.padding;
-        izLocalEnd = p.nzIn - p.padding;
+        izLocalEnd = n.nz - p.padding;
         izGlobalStart = 0;
-        texts = texts.concat(svgDrawTextZ(izLocalStart, izLocalEnd, izGlobalStart, p.nx, topLeft, p.face));
+        texts = texts.concat(svgDrawTextZ(izLocalStart, izLocalEnd, izGlobalStart, n.nx, topLeft, p.face));
     }
 
     // X direction text
-    topLeft = p.getTopLeftOfSubcube('TL','in','global');
-    texts = texts.concat(svgDrawTextX(p.nx, topLeft, p.face));
+    topLeft = p.getTopLeftOfSubcube('TL',inOut,'global');
+    texts = texts.concat(svgDrawTextX(n.nx, topLeft, p.face));
 
     return texts;
 }
