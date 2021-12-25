@@ -90,6 +90,7 @@ class Face {
         this.wTranslate = wTranslate;
         this.hTranslate = hTranslate;
         this.boxDim = boxDim;
+        this.angle = Math.atan(hTranslate / wTranslate)  * 180.0 / Math.PI;
     }
 }
 
@@ -1069,7 +1070,7 @@ class Text {
         return s;
         */
         var s = '<g transform="translate(' + String(this.x) + ',' + String(this.y) + ')">\n';
-        s += '<text text-anchor="' + this.anchor + '" font-size="small"';
+        s += '<text text-anchor="' + this.anchor + '" font-size="x-small"';
         s += 'transform="rotate(' + this.rotate + ')">';
         s += this.text;
         s += '</text>\n</g>';
@@ -1161,7 +1162,7 @@ function svgDrawTextZ(izLocalStart, izLocalEnd, izGlobalStart, nx, topLeft, face
         let x = topLeft.wTopLeft + nx * face.boxDim + (iz + 1.65) * face.wTranslate;
         let y = topLeft.hTopLeft + (iz+0.7) * face.hTranslate;
         let text = String(izGlobalStart + iz - izLocalStart);
-        texts.push(new Text(text, x, y, -20, "start"));
+        texts.push(new Text(text, x, y, -face.angle, "start"));
     }
     return texts;
 }
