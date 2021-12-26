@@ -14,8 +14,8 @@ let selFillOpacity = '1';
 let selStrokeOpacity = '1';
 let selFillInvalidRGB = "rgb(100%,50%,50%)";
 
-let widthCanvasMin = 400;
-let heightCanvasMin = 200;
+let widthCanvasMin = 300;
+let heightCanvasMin = 400;
 
 function selFillValidRGB(iFilter, nFilters) {
     let blueVal = 70 + 30*((nFilters-iFilter-1)/(nFilters-1));
@@ -899,7 +899,7 @@ function svgAnimateLoopStep() {
 
 function svgAnimateLoop() {
     svgAnimateLoopStep();
-    timeoutID = setTimeout(svgAnimateLoop, 100);
+    timeoutID = setTimeout(svgAnimateLoop, 250);
 }
 
 function svgAnimateStop() {
@@ -1080,6 +1080,17 @@ function svgDrawSel(nxDraw, nyDraw, nzDraw, nyPadSelEndInDraw, nzPadSelEndInDraw
     return paths;
 }
 
+function makeError(message) {
+    let s = `
+    <div class="row justify-content-center">
+    <h3 style="color:red;">
+        <i class="material-icons mr-1" style="color:red;">warning</i>
+    `;
+    s += message + '</h3>\n';
+    s += '</div>';
+    return s
+}
+
 function svgDraw() {
     // Check how many pieces to draw
     var paths;
@@ -1104,21 +1115,30 @@ function svgDraw() {
     // Errors
     var errs = "";
     if (p.stride > p.filterSize) {
-        errs += "Stride is larger than the filter size => data in the input is skipped.<br />";
+        errs += makeError("Stride is larger than the filter size - data in the input is skipped.") + "\n";
     }
     
     if (p.padding >= p.filterSize) {
-        errs += "Padding is greater or equal to filter size => some filters are not covering any data at all, only padding.<br />"
+        errs += makeError("Padding is greater or equal to filter size - some filters are not covering any data.") + "\n";
     }
 
     if (!Number.isInteger(p.nzOutTheory)) {
-        errs += "Filter does not evenly cover data in horizontal direction.<br />";
+        errs += makeError("Filter does not evenly cover data in horizontal direction." + "\n");
     }
 
     if (!Number.isInteger(p.nyOutTheory)) {
-        errs += "Filter does not evenly cover data in vertical direction.<br />";
+        errs += makeError("Filter does not evenly cover data in vertical direction." + "\n");
     }
     $("#ccError").html(errs);
+
+    // Dimensions
+    let labelIn = '<h3>Input:&nbsp;' + String(p.nzInput) + 'x' + String(p.nyInput) + 'x' + String(p.nx) + '</h3>\n';
+    let labelOut = '<h3>Output:&nbsp;' + String(p.nzOut) + 'x' + String(p.nyOut) + 'x' + String(p.nxOut) + '</h3>\n';
+    var dimStr = '<div class="row">\n';
+    dimStr += '<div class="col-sm-6">\n' + labelIn + '</div>\n';
+    dimStr += '<div class="col-sm-6">\n' + labelOut + '</div>\n';
+    dimStr += "</div>\n";
+    $("#ccDims").html(dimStr);
 }
 
 class Text {
@@ -1541,9 +1561,12 @@ function ccSetUp() {
     // Div to hold the drawing
     content += '<div id="ccSVG" style="width:' + String(widthCanvas) + 'px;height:' + String(heightCanvas) + 'px;"></div>\n'
 
+    // Div for the dimensions
+    content += '<div id="ccDims"></div>\n';
+
     // Div for the errors
-    content += '<h3 id="ccError" class="errorLabel"></h3>\n';
-    
+    content += '<div id="ccError"></div>\n';
+
     // Footer
     content += getFooter() + '\n';
 
