@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Convolution calculator</title>
+    <meta name="description" content="Convolution calculator for CNNs.">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="">
+    <meta property="og:title" content="Convolution calculator">
+    <meta property="og:description" content="Convolution calculator for CNNs.">
+    <meta property="og:image" content="">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="">
+    <meta property="twitter:url" content="">
+    <meta property="twitter:title" content="Convolution calculator">
+    <meta property="twitter:description" content="Convolution calculator for CNNs.">
+    <meta property="twitter:image" content="">
+
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <!-- Google Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!--<link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">-->
+    <!--<link rel="stylesheet" href="css/style.css">-->
+
+    <!-- JQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <!-- Convolution Calculator -->
+    <script type="text/javascript" src="js/convCalc.js"></script>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-md navbar-light bg-light">
+        <a class="navbar-brand" href="index.html">Convolution calculator</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+            <li class="nav-item active">
+                <a class="nav-link" href="about.html">About</a>
+            </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+
+        <h1>About</h1>
+        
+        <p>
+        This JS calculator helps to calculate parameters for layers in convolution neural networks. 
+        </p>
+
+        <p>
+        It supports inputs which are 2-dimensional such as images or 1-dimensional such as timeseries (set one of the width/height dimensions to 1).
+
+        You can visualize how the different choices tile your input data and what the output sizes will be.
+        </p>
+
+        <p>
+        The basic formula for the number of outputs from the convolution operation is:
+        </p>
+
+        <p>
+        (W−F+2P)/S+1
+        </p>
+
+        <p>
+        where W is the size of the input (width or height), F is filter extent, P is the padding, and S is the stride.
+        Note that for this calculator, only square filters are supported (the filter extent F controls both the width and height of the convolution) 
+        - in reality, non-square convolutions are also possible.
+        </p>
+
+        <h2>Embedd this on your site</h2>
+        
+        <p>
+        This is a JS project (relies on jQuery and Bootstrap 4). You can embedd it on your own page (it is under MIT license).
+        </p>
+
+        <p>
+        You can follow the instructions on the GitHub page of this project, which roughly are:
+        </p>
+        
+        <ol>
+            <li>Add the required jQuery JS and Bootstrap 4 stylesheet to your page.</li>
+                    <code> 
+                        &lt;link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous"&gt;<br />
+                        &lt;script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"&gt;&lt;/script&gt;
+                    </code>
+
+            <li>Grab the JS file from the GitHub page of this project.</li>
+            <li>Insert the div where the content will be loaded.</li>
+                <code> 
+                    &lt;div id='ccContainer'&gt;&lt;/div&gt;
+                </code>
+                <br />
+                You can also specify the width and height of the drawing; note however that this excludes the controls at the top, only the actual image is resized.
+                <br />
+                <code> 
+                    &lt;div id='ccContainer' style="width:800px;height:400px;"&gt;&lt;/div&gt;
+                </code>
+                <br />
+
+            <li>Trigger the JS to inject the drawing into the div when the page loads.</li>
+                <code> 
+                    &lt;script&gt;                <br />
+                        $(document).ready(function() {                <br />
+                            // Set up                <br />
+                            ccSetUp();                <br />
+                        });                <br />
+                    &lt;/script&gt;
+                </code>
+        </ol>
+          
+        <h2>GitHub</h2>
+
+        <p>
+        You can visit this project on its GitHub page. You can also complain here about problems :)
+        </p>
+
+        <footer style="text-align: center">
+            Created by <a href="https://oliver-ernst.com">Oliver K. Ernst</a> (2021). 
+            <br />
+            Released under MIT license.
+        </footer>
+    </div>
+
+  </body>
+</html>

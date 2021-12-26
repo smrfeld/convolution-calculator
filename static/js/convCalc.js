@@ -774,6 +774,7 @@ function updateParams(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, fi
 
         // Redraw
         svgDraw();
+        svgAnimateLoopStep();
     }
 }
 
@@ -1083,10 +1084,10 @@ function svgDrawSel(nxDraw, nyDraw, nzDraw, nyPadSelEndInDraw, nzPadSelEndInDraw
 function makeError(message) {
     let s = `
     <div class="row justify-content-center">
-    <h3 style="color:red;">
+    <h4 style="color:red;">
         <i class="material-icons mr-1" style="color:red;">warning</i>
     `;
-    s += message + '</h3>\n';
+    s += message + '</h4>\n';
     s += '</div>';
     return s
 }
@@ -1132,11 +1133,11 @@ function svgDraw() {
     $("#ccError").html(errs);
 
     // Dimensions
-    let labelIn = '<h3>Input:&nbsp;' + String(p.nzInput) + 'x' + String(p.nyInput) + 'x' + String(p.nx) + '</h3>\n';
-    let labelOut = '<h3>Output:&nbsp;' + String(p.nzOut) + 'x' + String(p.nyOut) + 'x' + String(p.nxOut) + '</h3>\n';
+    let labelIn = '<h5>Input:&nbsp;' + String(p.nzInput) + 'x' + String(p.nyInput) + 'x' + String(p.nx) + '</h5>\n';
+    let labelOut = '<h5>Output:&nbsp;' + String(p.nzOut) + 'x' + String(p.nyOut) + 'x' + String(p.nxOut) + '</h5>\n';
     var dimStr = '<div class="row">\n';
-    dimStr += '<div class="col-sm-6">\n' + labelIn + '</div>\n';
-    dimStr += '<div class="col-sm-6">\n' + labelOut + '</div>\n';
+    dimStr += '<div class="col-sm-6" style="text-align: center">\n' + labelIn + '</div>\n';
+    dimStr += '<div class="col-sm-6" style="text-align: center">\n' + labelOut + '</div>\n';
     dimStr += "</div>\n";
     $("#ccDims").html(dimStr);
 }
@@ -1579,7 +1580,7 @@ function ccSetUp() {
 
 function getFooter() {
     return `
-    <footer>
+    <footer style="text-align: center">
         Created by <a href="https://oliver-ernst.com">Oliver K. Ernst</a> (2021). 
         <br />
         Released under MIT license.
