@@ -746,15 +746,15 @@ function paddingAdd() {
 }
 
 function paddingSub() {
-    updateParams(p.nx, p.nyInput, p.nzInput, p.padding-1, p.nFilters, p.filterSize, p.stride-1, p.widthCanvas, p.heightCanvas);
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding-1, p.nFilters, p.filterSize, p.stride, p.widthCanvas, p.heightCanvas);
 }
 
 function nFiltersAdd() {
-    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters+1, p.filterSize, p.stride-1, p.widthCanvas, p.heightCanvas);
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters+1, p.filterSize, p.stride, p.widthCanvas, p.heightCanvas);
 }
 
 function nFiltersSub() {
-    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters-1, p.filterSize, p.stride-1, p.widthCanvas, p.heightCanvas);
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters-1, p.filterSize, p.stride, p.widthCanvas, p.heightCanvas);
 }
 
 function svgResetAndRedraw() {
@@ -1479,3 +1479,115 @@ function setUIfromParams() {
 // Update UI
 setUIfromParams();
 */
+
+function ccSetUp() {
+    let heightOffered = $('#ccContainer').height();
+    let widthOffered = $('#ccContainer').width();
+    let heightCanvas = Math.max(heightOffered, heightCanvasMin);
+    let widthCanvas = Math.max(widthOffered, widthCanvasMin);
+
+    var content = getControls() + '\n';
+
+    // Div to hold the drawing
+    content += '<div id="ccSVG" style="width:' + String(widthCanvas) + 'px;height:' + String(heightCanvas) + 'px;"></div>\n'
+
+    // Div for the errors
+    content += '<h3 id="ccError" class="errorLabel"></h3>\n';
+    
+    // Footer
+    content += getFooter() + '\n';
+
+    // Inject
+    $('#ccContainer').html(content);
+
+    // Trigger the draw method to load initial
+    updateParamsFromUserInput();
+}
+
+function getFooter() {
+    return `
+    <footer>
+        Created by <a href="https://oliver-ernst.com">Oliver K. Ernst</a> (2021). 
+        <br />
+        Released under MIT license.
+    </footer>
+    `;
+}
+
+function getControls() {
+    var s = '<form>\n';
+    s += `        
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="row">
+                <label for="ccnzInput" class="col-sm-4 col-form-label">Width:</label>
+                <div class="col-sm-8">
+                    <input type="text" class="form-control" value="6" id="ccnzInput" onchange="updateParamsFromUserInput();"
+                        onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+                </div>
+            </div>
+
+            <div class="row">
+                <label for="ccnyInput" class="col-sm-4 col-form-label">Height:</label>
+                <div class="col-sm-8">
+                    <input type="text" class="form-control" value="6" id="ccnyInput" onchange="updateParamsFromUserInput();"
+                        onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+                </div>
+            </div>
+
+            <div class="row">
+                <label for="ccnx" class="col-sm-4 col-form-label">#&nbsp;channels:</label>
+                <div class="col-sm-8">
+                    <input type="text" class="form-control" value="3" id="ccnx" onchange="updateParamsFromUserInput();"
+                        onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="row">
+                <label for="paddingSub">padding: <span id="ccpadding">0</span></label>
+                &nbsp;
+                <input id="paddingSub" type="button" class="button_pw" value="-" onclick="paddingSub();">
+                &nbsp;
+                <input type="button" class="button_pw" value="+" onclick="paddingAdd();">
+            </div>
+
+            <div class="row">
+                <label># filters: <span id="ccnFilters">2</span></label>
+                &nbsp;
+                <input type="button" class="button_pw" value="-" onclick="nFiltersSub();">
+                &nbsp;
+                <input type="button" class="button_pw" value="+" onclick="nFiltersAdd();">
+            </div>
+
+            <div class="row">
+                <label>filter extent: <span id="ccfilterSize">2</span></label>
+                &nbsp;
+                <input type="button" class="button_pw" value="-" onclick="filterSizeSub();">
+                &nbsp;
+                <input type="button" class="button_pw" value="+" onclick="filterSizeAdd();">
+            </div>
+
+            <div class="row">
+                <label>stride: <span id="ccstride">2</span></label>
+                &nbsp;
+                <input type="button" class="button_pw" value="-" onclick="strideSub();">
+                &nbsp;
+                <input type="button" class="button_pw" value="+" onclick="strideAdd();">
+            </div>
+        </div>
+    </div>
+    `;
+    
+    s += `
+    <div class="row">
+        <input type="button" class="button_pw" value="start" onclick="svgAnimateStart();"/>
+        <input type="button" class="button_pw" value="stop" onclick="svgAnimateStop();"/>
+        <input type="button" class="button_pw" value="loop" onclick="svgAnimateLoopStep();"/>
+    </div>
+    `;
+
+    s += '</form>';
+    
+    return s;
+}

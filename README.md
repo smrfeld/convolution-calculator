@@ -16,5 +16,4 @@ TBD:
 * Clean up error display
 * Host on CDS
 * Center output
-* Diplacement input/output based on nx
-* Add numbers
+* State sizes at bottom

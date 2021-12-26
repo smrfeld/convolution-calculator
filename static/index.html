@@ -51,100 +51,12 @@
 
         <script>
             $(document).ready(function() {
-                // Trigger the draw method on lead
-                updateParamsFromUserInput();
+                // Set up
+                ccSetUp();
             });
         </script>
 
-        <div class="row">
-            <div class="col-sm-6">
-                <div class="row">
-                    <div class="col-sm-2">
-                        <h3>nx:</h3>
-                    </div>
-                    <div class="col-sm-10">
-                        <input type="text" class="enter" value="3" id="ccnx" onchange="updateParamsFromUserInput();"
-                            onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-sm-2">
-                        <h3>ny:</h3>
-                    </div>
-                    <div class="col-sm-10">
-                        <input type="text" class="enter" value="6" id="ccnyInput" onchange="updateParamsFromUserInput();"
-                            onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-sm-2">
-                        <h3>nz:</h3>
-                    </div>
-                    <div class="col-sm-10">
-                        <input type="text" class="enter" value="6" id="ccnzInput" onchange="updateParamsFromUserInput();"
-                            onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6">
-                <div class="row">
-                    <h3>padding: <span id="ccpadding">0</span></h3>
-                    &nbsp;
-                    <input type="button" class="button_pw" value="-" onclick="paddingSub();">
-                    &nbsp;
-                    <input type="button" class="button_pw" value="+" onclick="paddingAdd();">
-                </div>
-    
-                <div class="row">
-                    <h3># filters: <span id="ccnFilters">2</span></h3>
-                    &nbsp;
-                    <input type="button" class="button_pw" value="-" onclick="nFiltersSub();">
-                    &nbsp;
-                    <input type="button" class="button_pw" value="+" onclick="nFiltersAdd();">
-                </div>
-        
-                <div class="row">
-                    <h3>filter extent: <span id="ccfilterSize">2</span></h3>
-                    &nbsp;
-                    <input type="button" class="button_pw" value="-" onclick="filterSizeSub();">
-                    &nbsp;
-                    <input type="button" class="button_pw" value="+" onclick="filterSizeAdd();">
-                </div>
-        
-                <div class="row">
-                    <h3>stride: <span id="ccstride">2</span></h3>
-                    &nbsp;
-                    <input type="button" class="button_pw" value="-" onclick="strideSub();">
-                    &nbsp;
-                    <input type="button" class="button_pw" value="+" onclick="strideAdd();">
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <input type="button" class="button_pw" value="start" onclick="svgAnimateStart();"/>
-            <input type="button" class="button_pw" value="stop" onclick="svgAnimateStop();"/>
-            <input type="button" class="button_pw" value="loop" onclick="svgAnimateLoopStep();"/>
-        </div>
-
-        <!--
-        <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-        <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" viewBox="0 0 959 593">
-            <path id="sel_left_001_002_001" d="M 180 220 L 180 220 L 210 240 L 210 290 L 180 270 L 180 220 "></path>
-        </svg>
-        -->
-
-        <div id='ccSVG' style="width:600px;height:400px;"></div>
-
-        <h3 id='ccError' class='errorLabel'></h3>
-
-        <footer>
-            Created by <a href="https://oliver-ernst.com">Oliver K. Ernst</a> (2021). 
-            <br />
-            Released under MIT license.
-        </footer>
+        <div id='ccContainer' style="width:600px;height:400px;"></div>
     </div>
 
   </body>
