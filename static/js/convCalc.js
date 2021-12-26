@@ -406,7 +406,6 @@ class Params {
         }
     }
 
-    // svgAnimateLoopIncrement() {
     svgIncrementSel() {
 
         // Next in z direction
@@ -429,6 +428,53 @@ class Params {
             this.ixSelOut = 0;
             this.iySelOut = 0;
             this.izSelOut = 0;
+        }
+    }
+
+    svgDecrementSelz() {    
+        this.izSelOut -= 1;
+        if (this.splitZdir) {
+            // Break in z direction
+            // Only allowed indexes are 0,1 or nzOut-2, nzOut-1
+            if ((this.izSelOut > 1) && (this.izSelOut < this.nzOut-2)) {
+                this.izSelOut = 1;
+            } 
+        }
+    }    
+
+    svgDecrementSely() {    
+        this.iySelOut -= 1;
+        if (this.splitYdir) {
+            // Break in y direction
+            // Only allowed indexes are 0,1 or nyOut-2, nyOut-1
+            if ((this.iySelOut > 1) && (this.iySelOut < this.nyOut-2)) {
+                this.iySelOut = 1;
+            } 
+        }
+    }
+
+    svgDecrementSel() {
+
+        // Next in z direction
+        this.svgDecrementSelz();
+    
+        // Check in bounds
+        if (this.izSelOut < 0) {
+            // Next in y direction
+            this.svgDecrementSely();
+            this.izSelOut = this.nzOut-1;
+        }
+        if (this.iySelOut < 0) {
+            // Next in x direction
+            this.ixSelOut -= 1;
+            this.iySelOut = this.nyOut-1;
+            this.izSelOut = this.nzOut-1;
+        }
+        if (this.ixSelOut < 0) {
+            // Reset
+            this.ixSelOut = this.nxOut-1;
+            this.iySelOut = this.nyOut-1;
+            this.izSelOut = this.nzOut-1;
         }
     }
 }
@@ -651,20 +697,20 @@ function updateParamsFromUserInput() {
     var nxNew = parseInt($("#ccnx").val());
     var nyInputNew = parseInt($("#ccnyInput").val());
     var nzInputNew = parseInt($("#ccnzInput").val());
-    var paddingNew = parseInt($("#ccpadding").text());
-    var nFiltersNew = parseInt($("#ccnFilters").text());
-    var filterSizeNew = parseInt($("#ccfilterSize").text());
-    var strideNew = parseInt($("#ccstride").text());
+    var paddingNew = parseInt($("#ccpadding").val());
+    var nFiltersNew = parseInt($("#ccnFilters").val());
+    var filterSizeNew = parseInt($("#ccfilterSize").val());
+    var strideNew = parseInt($("#ccstride").val());
     let widthCanvas = $("#ccSVG").width();
     let heightCanvas = $("#ccSVG").height();
     updateParams(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew, widthCanvas, heightCanvas);
 }
 
 function updateUserFromParams() {
-    $("#ccfilterSize").html(String(p.filterSize));
-    $('#ccstride').html(String(p.stride));
-    $('#ccpadding').html(String(p.padding));
-    $('#ccnFilters').html(String(p.nFilters));
+    $("#ccfilterSize").val(String(p.filterSize));
+    $('#ccstride').val(String(p.stride));
+    $('#ccpadding').val(String(p.padding));
+    $('#ccnFilters').val(String(p.nFilters));
 }
 
 function updateParams(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew, widthCanvas, heightCanvas) {
@@ -714,6 +760,11 @@ function updateParams(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, fi
         || paddingNew != p.padding || nFiltersNew != p.nFilters || filterSizeNew != p.filterSize
         || strideNew != p.stride || widthCanvas != p.widthCanvas || heightCanvas != p.heightCanvas) {
         
+        console.log("paddingNew",paddingNew);
+        console.log("nFiltersNew",nFiltersNew);
+        console.log("filterSizeNew",filterSizeNew);
+        console.log("strideNew",strideNew);
+
         // Update params
         p = new Params(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew, widthCanvas, heightCanvas);
 
@@ -819,6 +870,14 @@ function svgAnimateStart() {
         return;
     }
     svgAnimateLoop();
+}
+
+function svgAnimateLoopStepBack() {
+    // Increment
+    p.svgDecrementSel();
+
+    // Draw
+    ds.svgAnimateLoopDraw(p);
 }
 
 function svgAnimateLoopStep() {
@@ -1462,24 +1521,6 @@ function svgDraw2horizInOut(
     return { pathsGrid, pathsSel };
 }
 
-/*
-function setUIfromParams() {
-    $("#ccnx").val(String(p.nx));
-    $("#ccnyInput").val(String(p.nyInput));
-    $("#ccnzInput").val(String(p.nzInput));
-    $("#ccpadding").text(String(p.padding));
-    $("#ccnFilters").text(String(p.nFilters));
-    $("#ccfilterSize").text(String(p.filterSize));
-    $("#ccstride").text(String(p.stride));
-
-    // Draw
-    svgDraw();
-}
-
-// Update UI
-setUIfromParams();
-*/
-
 function ccSetUp() {
     let heightOffered = $('#ccContainer').height();
     let widthOffered = $('#ccContainer').width();
@@ -1518,72 +1559,112 @@ function getControls() {
     var s = '<form>\n';
     s += `        
     <div class="row">
-        <div class="col-sm-6">
+        <div class="col-sm-5">
             <div class="row">
-                <label for="ccnzInput" class="col-sm-4 col-form-label">Width:</label>
-                <div class="col-sm-8">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="inputGroup-sizing-sm">Width</span>
+                    </div>
                     <input type="text" class="form-control" value="6" id="ccnzInput" onchange="updateParamsFromUserInput();"
                         onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
                 </div>
             </div>
 
             <div class="row">
-                <label for="ccnyInput" class="col-sm-4 col-form-label">Height:</label>
-                <div class="col-sm-8">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="inputGroup-sizing-sm">Height</span>
+                    </div>
                     <input type="text" class="form-control" value="6" id="ccnyInput" onchange="updateParamsFromUserInput();"
                         onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
                 </div>
             </div>
 
             <div class="row">
-                <label for="ccnx" class="col-sm-4 col-form-label">#&nbsp;channels:</label>
-                <div class="col-sm-8">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="inputGroup-sizing-sm">No. channels</span>
+                    </div>
                     <input type="text" class="form-control" value="3" id="ccnx" onchange="updateParamsFromUserInput();"
                         onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
                 </div>
             </div>
         </div>
+        <div class="col-sm-1">
+        </div>
         <div class="col-sm-6">
             <div class="row">
-                <label for="paddingSub">padding: <span id="ccpadding">0</span></label>
-                &nbsp;
-                <input id="paddingSub" type="button" class="button_pw" value="-" onclick="paddingSub();">
-                &nbsp;
-                <input type="button" class="button_pw" value="+" onclick="paddingAdd();">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="inputGroup-sizing-sm">Padding</span>
+                    </div>
+                    <input id="ccpadding" type="text" class="form-control" value="0" readonly>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-primary" type="button" onclick="paddingSub();">-</button>
+                        <button class="btn btn-outline-primary" type="button" onclick="paddingAdd();">+</button>
+                    </div>
+                </div>
             </div>
 
             <div class="row">
-                <label># filters: <span id="ccnFilters">2</span></label>
-                &nbsp;
-                <input type="button" class="button_pw" value="-" onclick="nFiltersSub();">
-                &nbsp;
-                <input type="button" class="button_pw" value="+" onclick="nFiltersAdd();">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="inputGroup-sizing-sm">No. filters</span>
+                    </div>
+                    <input id="ccnFilters" type="text" class="form-control" value="2" readonly>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-primary" type="button" onclick="nFiltersSub();">-</button>
+                        <button class="btn btn-outline-primary" type="button" onclick="nFiltersAdd();">+</button>
+                    </div>
+                </div>
             </div>
 
             <div class="row">
-                <label>filter extent: <span id="ccfilterSize">2</span></label>
-                &nbsp;
-                <input type="button" class="button_pw" value="-" onclick="filterSizeSub();">
-                &nbsp;
-                <input type="button" class="button_pw" value="+" onclick="filterSizeAdd();">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="inputGroup-sizing-sm">Filter extent</span>
+                    </div>
+                    <input id="ccfilterSize" type="text" class="form-control" value="2" readonly>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-primary" type="button" onclick="filterSizeSub();">-</button>
+                        <button class="btn btn-outline-primary" type="button" onclick="filterSizeAdd();">+</button>
+                    </div>
+                </div>
             </div>
 
             <div class="row">
-                <label>stride: <span id="ccstride">2</span></label>
-                &nbsp;
-                <input type="button" class="button_pw" value="-" onclick="strideSub();">
-                &nbsp;
-                <input type="button" class="button_pw" value="+" onclick="strideAdd();">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="inputGroup-sizing-sm">Stride</span>
+                    </div>
+                    <input id="ccstride" type="text" class="form-control" value="2" readonly>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-primary" type="button" onclick="strideSub();">-</button>
+                        <button class="btn btn-outline-primary" type="button" onclick="strideAdd();">+</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     `;
     
     s += `
-    <div class="row">
-        <input type="button" class="button_pw" value="start" onclick="svgAnimateStart();"/>
-        <input type="button" class="button_pw" value="stop" onclick="svgAnimateStop();"/>
-        <input type="button" class="button_pw" value="loop" onclick="svgAnimateLoopStep();"/>
+    <div class="row justify-content-center">
+        <button type="button" class="btn btn-outline-primary d-flex justify-content-center align-content-between" onclick="svgAnimateLoopStepBack();">
+            <i class="material-icons mr-1">fast_rewind</i>
+        </button>
+        &nbsp;
+        <button type="button" class="btn btn-outline-primary d-flex justify-content-center align-content-between" onclick="svgAnimateStart();">
+            <i class="material-icons mr-1">play_arrow</i>
+        </button>
+        &nbsp;
+        <button type="button" class="btn btn-outline-primary d-flex justify-content-center align-content-between" onclick="svgAnimateStop();">
+            <i class="material-icons mr-1">pause</i>
+        </button>
+        &nbsp;
+        <button type="button" class="btn btn-outline-primary d-flex justify-content-center align-content-between" onclick="svgAnimateLoopStep();">
+            <i class="material-icons mr-1">fast_forward</i>
+        </button>
     </div>
     `;
 
