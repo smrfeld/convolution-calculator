@@ -707,6 +707,7 @@ function updateParamsFromUserInput() {
 }
 
 function updateUserFromParams() {
+    $("#ccnx").val(String(p.nx));
     $("#ccfilterSize").val(String(p.filterSize));
     $('#ccstride').val(String(p.stride));
     $('#ccpadding').val(String(p.padding));
@@ -714,7 +715,7 @@ function updateUserFromParams() {
 }
 
 function updateParams(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew, widthCanvas, heightCanvas) {
-    if (isNaN(nxNew) || nxNew <= 0 || nxNew > 10) {
+    if (isNaN(nxNew) || nxNew < 1 || nxNew > 10) {
         nxNew = p.nx;
     }
     if (isNaN(nyInputNew) || nyInputNew <= 0) {
@@ -798,6 +799,14 @@ function paddingAdd() {
 
 function paddingSub() {
     updateParams(p.nx, p.nyInput, p.nzInput, p.padding-1, p.nFilters, p.filterSize, p.stride, p.widthCanvas, p.heightCanvas);
+}
+
+function nxAdd() {
+    updateParams(p.nx+1, p.nyInput, p.nzInput, p.padding, p.nFilters, p.filterSize, p.stride, p.widthCanvas, p.heightCanvas);
+}
+
+function nxSub() {
+    updateParams(p.nx-1, p.nyInput, p.nzInput, p.padding, p.nFilters, p.filterSize, p.stride, p.widthCanvas, p.heightCanvas);
 }
 
 function nFiltersAdd() {
@@ -1585,8 +1594,11 @@ function getControls() {
                     <div class="input-group-prepend">
                         <span class="input-group-text" id="inputGroup-sizing-sm">No. channels</span>
                     </div>
-                    <input type="text" class="form-control" value="3" id="ccnx" onchange="updateParamsFromUserInput();"
-                        onkeyup="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+                    <input id="ccnx" type="text" class="form-control" value="3" readonly>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" onclick="nxSub();">-</button>
+                        <button class="btn btn-outline-secondary" type="button" onclick="nxAdd();">+</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1600,8 +1612,8 @@ function getControls() {
                     </div>
                     <input id="ccpadding" type="text" class="form-control" value="0" readonly>
                     <div class="input-group-append">
-                        <button class="btn btn-outline-primary" type="button" onclick="paddingSub();">-</button>
-                        <button class="btn btn-outline-primary" type="button" onclick="paddingAdd();">+</button>
+                        <button class="btn btn-outline-secondary" type="button" onclick="paddingSub();">-</button>
+                        <button class="btn btn-outline-secondary" type="button" onclick="paddingAdd();">+</button>
                     </div>
                 </div>
             </div>
@@ -1613,8 +1625,8 @@ function getControls() {
                     </div>
                     <input id="ccnFilters" type="text" class="form-control" value="2" readonly>
                     <div class="input-group-append">
-                        <button class="btn btn-outline-primary" type="button" onclick="nFiltersSub();">-</button>
-                        <button class="btn btn-outline-primary" type="button" onclick="nFiltersAdd();">+</button>
+                        <button class="btn btn-outline-secondary" type="button" onclick="nFiltersSub();">-</button>
+                        <button class="btn btn-outline-secondary" type="button" onclick="nFiltersAdd();">+</button>
                     </div>
                 </div>
             </div>
@@ -1626,8 +1638,8 @@ function getControls() {
                     </div>
                     <input id="ccfilterSize" type="text" class="form-control" value="2" readonly>
                     <div class="input-group-append">
-                        <button class="btn btn-outline-primary" type="button" onclick="filterSizeSub();">-</button>
-                        <button class="btn btn-outline-primary" type="button" onclick="filterSizeAdd();">+</button>
+                        <button class="btn btn-outline-secondary" type="button" onclick="filterSizeSub();">-</button>
+                        <button class="btn btn-outline-secondary" type="button" onclick="filterSizeAdd();">+</button>
                     </div>
                 </div>
             </div>
@@ -1639,8 +1651,8 @@ function getControls() {
                     </div>
                     <input id="ccstride" type="text" class="form-control" value="2" readonly>
                     <div class="input-group-append">
-                        <button class="btn btn-outline-primary" type="button" onclick="strideSub();">-</button>
-                        <button class="btn btn-outline-primary" type="button" onclick="strideAdd();">+</button>
+                        <button class="btn btn-outline-secondary" type="button" onclick="strideSub();">-</button>
+                        <button class="btn btn-outline-secondary" type="button" onclick="strideAdd();">+</button>
                     </div>
                 </div>
             </div>
@@ -1650,19 +1662,19 @@ function getControls() {
     
     s += `
     <div class="row justify-content-center">
-        <button type="button" class="btn btn-outline-primary d-flex justify-content-center align-content-between" onclick="svgAnimateLoopStepBack();">
+        <button type="button" class="btn btn-outline-secondary d-flex justify-content-center align-content-between" onclick="svgAnimateLoopStepBack();">
             <i class="material-icons mr-1">fast_rewind</i>
         </button>
         &nbsp;
-        <button type="button" class="btn btn-outline-primary d-flex justify-content-center align-content-between" onclick="svgAnimateStart();">
+        <button type="button" class="btn btn-outline-secondary d-flex justify-content-center align-content-between" onclick="svgAnimateStart();">
             <i class="material-icons mr-1">play_arrow</i>
         </button>
         &nbsp;
-        <button type="button" class="btn btn-outline-primary d-flex justify-content-center align-content-between" onclick="svgAnimateStop();">
+        <button type="button" class="btn btn-outline-secondary d-flex justify-content-center align-content-between" onclick="svgAnimateStop();">
             <i class="material-icons mr-1">pause</i>
         </button>
         &nbsp;
-        <button type="button" class="btn btn-outline-primary d-flex justify-content-center align-content-between" onclick="svgAnimateLoopStep();">
+        <button type="button" class="btn btn-outline-secondary d-flex justify-content-center align-content-between" onclick="svgAnimateLoopStep();">
             <i class="material-icons mr-1">fast_forward</i>
         </button>
     </div>
