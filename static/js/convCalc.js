@@ -14,8 +14,7 @@ let selFillOpacity = '1';
 let selStrokeOpacity = '1';
 let selFillInvalidRGB = "rgb(100%,50%,50%)";
 
-let widthCanvasMin = 300;
-let heightCanvasMin = 400;
+let heightCanvasFixed = 400;
 
 function selFillValidRGB(iFilter, nFilters) {
     let blueVal = 70 + 30*((nFilters-iFilter-1)/(nFilters-1));
@@ -95,7 +94,7 @@ class Face {
 }
 
 class Params {
-    constructor(nx, nyInput, nzInput, padding, nFilters, filterSize, stride, widthCanvas, heightCanvas) {
+    constructor(nx, nyInput, nzInput, padding, nFilters, filterSize, stride, widthCanvas) {
         this.nx = nx;
         this.nyInput = nyInput;
         this.nzInput = nzInput;
@@ -103,9 +102,9 @@ class Params {
         this.nFilters = nFilters;
         this.filterSize = filterSize;
         this.stride = stride;
-        this.widthCanvas = Math.max(widthCanvas, widthCanvasMin);
-        this.heightCanvas = Math.max(heightCanvas, heightCanvasMin);
-        console.log("Using width, height for canvas:", this.widthCanvas, this.heightCanvas);
+
+        this.widthCanvas = widthCanvas;
+        console.log("Using width, height for canvas:", this.widthCanvas, heightCanvasFixed);
 
         console.log("Changed params: (nx, nyInput, nzInput, padding, nFilters, filterSize, stride) = ",
             this.nx, this.nyInput, this.nzInput, this.padding, this.nFilters, this.filterSize, this.stride);
@@ -212,17 +211,19 @@ class Params {
         }
 
         // Rescale
-        this.rescale();
+        this.rescale(this.widthCanvas);
     }
 
-    rescale() {
+    rescale(widthCanvas) {
+        this.widthCanvas = widthCanvas;
+        
         // Get current width, height
         let curr = this.getWidthHeight();
 
         // Height should be 80% of possible height
         // Width should be 80 % of half of page width for in,out
-        let drawingHeight = 0.8 * this.heightCanvas;
-        let drawingWidth = 0.5 * 0.8 * this.widthCanvas;
+        let drawingHeight = 0.75 * heightCanvasFixed;
+        let drawingWidth = 0.75 * 0.5*this.widthCanvas;
         
         // Scaling
         // Find smallest rescaling factor
@@ -240,10 +241,21 @@ class Params {
         this.face.hTranslate *= scale;
 
         // Offset
-        this.wTopLeftCanvasIn = 0.5 * 0.1 * this.widthCanvas;
-        this.hTopLeftCanvasIn = 0.1 * this.heightCanvas;
-        this.wTopLeftCanvasOut = 0.5 * this.widthCanvas + 0.5 * 0.1 * this.widthCanvas;
-        this.hTopLeftCanvasOut = 0.1 * this.heightCanvas;
+        let resWidthIn = scale * curr.widthIn;
+        let marginWidthIn = 0.5 * (0.5*this.widthCanvas - resWidthIn);
+        this.wTopLeftCanvasIn = marginWidthIn;
+
+        let resWidthOut = scale * curr.widthOut;
+        let marginWidthOut = 0.5 * (0.5*this.widthCanvas - resWidthOut);
+        this.wTopLeftCanvasOut = 0.5*this.widthCanvas + marginWidthOut;
+
+        let resHeightIn = scale * curr.heightIn;
+        let marginHeightIn = 0.5 * (heightCanvasFixed - resHeightIn);
+        this.hTopLeftCanvasIn = marginHeightIn;
+
+        let resHeightOut = scale * curr.heightOut;
+        let marginHeightOut = 0.5 * (heightCanvasFixed - resHeightOut);
+        this.hTopLeftCanvasOut = marginHeightOut;
     }
 
     getPadding(inOut) {
@@ -693,6 +705,23 @@ class DrawingSelections {
 var p = NaN;
 var ds = new DrawingSelections();
 
+// Resized window
+$( window ).resize(function() {    
+    // Get width and height
+    let widthCanvas = $("#ccSVG").width();
+    console.log("resizing because window height changed; new width: ", widthCanvas);
+
+    // Rescale
+    p.rescale(widthCanvas);
+
+    // Draw
+    p.iySelOut = 0;
+    p.ixSelOut = 0;
+    p.izSelOut = -1;
+    svgDraw();
+    svgAnimateLoopStep();
+});
+
 function updateParamsFromUserInput() {
     var nxNew = parseInt($("#ccnx").val());
     var nyInputNew = parseInt($("#ccnyInput").val());
@@ -702,8 +731,9 @@ function updateParamsFromUserInput() {
     var filterSizeNew = parseInt($("#ccfilterSize").val());
     var strideNew = parseInt($("#ccstride").val());
     let widthCanvas = $("#ccSVG").width();
-    let heightCanvas = $("#ccSVG").height();
-    updateParams(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew, widthCanvas, heightCanvas);
+
+    console.log("Updated params from user input - width, height =", widthCanvas);
+    updateParams(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew, widthCanvas);
 }
 
 function updateUserFromParams() {
@@ -714,7 +744,7 @@ function updateUserFromParams() {
     $('#ccnFilters').val(String(p.nFilters));
 }
 
-function updateParams(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew, widthCanvas, heightCanvas) {
+function updateParams(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew, widthCanvas) {
     if (isNaN(nxNew) || nxNew < 1 || nxNew > 10) {
         nxNew = p.nx;
     }
@@ -759,15 +789,13 @@ function updateParams(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, fi
     // Update params only if something changed
     if (isNaN(p) || nxNew != p.nx || nyInputNew != p.nyInput || nzInputNew != p.nzInput 
         || paddingNew != p.padding || nFiltersNew != p.nFilters || filterSizeNew != p.filterSize
-        || strideNew != p.stride || widthCanvas != p.widthCanvas || heightCanvas != p.heightCanvas) {
+        || strideNew != p.stride || widthCanvas != p.widthCanvas) {
         
-        console.log("paddingNew",paddingNew);
-        console.log("nFiltersNew",nFiltersNew);
-        console.log("filterSizeNew",filterSizeNew);
-        console.log("strideNew",strideNew);
+        console.log("New params: (paddingNew, nFiltersNew, filterSizeNew, strideNew) = ",
+            paddingNew,nFiltersNew,filterSizeNew,strideNew);
 
         // Update params
-        p = new Params(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew, widthCanvas, heightCanvas);
+        p = new Params(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew, widthCanvas);
 
         // Update user display
         updateUserFromParams(p);
@@ -779,43 +807,43 @@ function updateParams(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, fi
 }
 
 function filterSizeAdd() {
-    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters, p.filterSize+1, p.stride, p.widthCanvas, p.heightCanvas);
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters, p.filterSize+1, p.stride, p.widthCanvas);
 }
 
 function filterSizeSub() {
-    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters, p.filterSize-1, p.stride, p.widthCanvas, p.heightCanvas);
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters, p.filterSize-1, p.stride, p.widthCanvas);
 }
 
 function strideAdd() {
-    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters, p.filterSize, p.stride+1, p.widthCanvas, p.heightCanvas);
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters, p.filterSize, p.stride+1, p.widthCanvas);
 }
 
 function strideSub() {
-    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters, p.filterSize, p.stride-1, p.widthCanvas, p.heightCanvas);
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters, p.filterSize, p.stride-1, p.widthCanvas);
 }
 
 function paddingAdd() {
-    updateParams(p.nx, p.nyInput, p.nzInput, p.padding+1, p.nFilters, p.filterSize, p.stride, p.widthCanvas, p.heightCanvas);
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding+1, p.nFilters, p.filterSize, p.stride, p.widthCanvas);
 }
 
 function paddingSub() {
-    updateParams(p.nx, p.nyInput, p.nzInput, p.padding-1, p.nFilters, p.filterSize, p.stride, p.widthCanvas, p.heightCanvas);
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding-1, p.nFilters, p.filterSize, p.stride, p.widthCanvas);
 }
 
 function nxAdd() {
-    updateParams(p.nx+1, p.nyInput, p.nzInput, p.padding, p.nFilters, p.filterSize, p.stride, p.widthCanvas, p.heightCanvas);
+    updateParams(p.nx+1, p.nyInput, p.nzInput, p.padding, p.nFilters, p.filterSize, p.stride, p.widthCanvas);
 }
 
 function nxSub() {
-    updateParams(p.nx-1, p.nyInput, p.nzInput, p.padding, p.nFilters, p.filterSize, p.stride, p.widthCanvas, p.heightCanvas);
+    updateParams(p.nx-1, p.nyInput, p.nzInput, p.padding, p.nFilters, p.filterSize, p.stride, p.widthCanvas);
 }
 
 function nFiltersAdd() {
-    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters+1, p.filterSize, p.stride, p.widthCanvas, p.heightCanvas);
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters+1, p.filterSize, p.stride, p.widthCanvas);
 }
 
 function nFiltersSub() {
-    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters-1, p.filterSize, p.stride, p.widthCanvas, p.heightCanvas);
+    updateParams(p.nx, p.nyInput, p.nzInput, p.padding, p.nFilters-1, p.filterSize, p.stride, p.widthCanvas);
 }
 
 function svgResetAndRedraw() {
@@ -1110,7 +1138,7 @@ function svgDraw() {
     let texts = textsIn.concat(textsOut);
 
     // Draw
-    let svgStr = svgCreateStr(p.widthCanvas,p.heightCanvas,paths.pathsGrid,paths.pathsSel,texts);
+    let svgStr = svgCreateStr(p.widthCanvas,heightCanvasFixed,paths.pathsGrid,paths.pathsSel,texts);
     $('#ccSVG').html(svgStr);
 
     // Errors
@@ -1552,15 +1580,11 @@ function svgDraw2horizInOut(
 }
 
 function ccSetUp() {
-    let heightOffered = $('#ccContainer').height();
-    let widthOffered = $('#ccContainer').width();
-    let heightCanvas = Math.max(heightOffered, heightCanvasMin);
-    let widthCanvas = Math.max(widthOffered, widthCanvasMin);
-
     var content = getControls() + '\n';
 
     // Div to hold the drawing
-    content += '<div id="ccSVG" style="width:' + String(widthCanvas) + 'px;height:' + String(heightCanvas) + 'px;"></div>\n'
+    // content += '<div id="ccSVG" style="width:' + String(widthCanvas) + 'px;height:' + String(heightCanvas) + 'px;"></div>\n'
+    content += '<div id="ccSVG" style="width:100%;"></div>\n'
 
     // Div for the dimensions
     content += '<div id="ccDims"></div>\n';

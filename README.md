@@ -7,6 +7,5 @@ python -m http.server 8000
 ```
 
 TBD:
-* About page & explanation
 * Host on CDS
 * Center input/output
