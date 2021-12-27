@@ -6,7 +6,7 @@ See the finished product at [https://oliver-ernst.com/convolution-calculator](ht
 
 Or, embed this calculator on your own site by following the instructions below.
 
-<img src="static/img/twitter.png" alt="drawing" width="600"/>
+<img src="imgs/twitter.png" alt="drawing" width="600"/>
 
 ## Embed this on your site
 
