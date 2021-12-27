@@ -1,8 +1,12 @@
 # Convolution calculator
 
-The main file is the `convCalc.js`.
+This is a calculator to help you construct convolution layers in neural networks.
 
-## Embedd this on your site
+See the finished product at [https://oliver-ernst.com/convolution-calculator](https://oliver-ernst.com/convolution-calculator).
+
+Or, embed this calculator on your own site by following the instructions below.
+
+## Embed this on your site
 
 This is a JS project (relies on jQuery, Bootstrap 4, and Material icons). You can embedd it on your own page (it is under MIT license).
 
@@ -18,7 +22,15 @@ This is a JS project (relies on jQuery, Bootstrap 4, and Material icons). You ca
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     ```
 
-2. Grab the JS file from the GitHub page of this project.
+2. Grab the main JS file `convCalc.js` from this repo and add it to your page assets. Alternatively, use the awesome `jsDelivr` CDN:
+    ```
+    <script src="https://cdn.jsdelivr.net/gh/smrfeld/convolution-calculator/convCalc.js"></script>
+    ```
+    Or you can even get the minified version:
+    ```
+    <script src="https://cdn.jsdelivr.net/gh/smrfeld/convolution-calculator/convCalc.min.js"></script>
+    ```
+
 3. Insert the div where the content will be loaded.
     ```
     <div id='ccContainer'></div>
