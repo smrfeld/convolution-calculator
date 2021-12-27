@@ -6,8 +6,6 @@ The main file is the `convCalc.js`.
 
 This is a JS project (relies on jQuery, Bootstrap 4, and Material icons). You can embedd it on your own page (it is under MIT license).
 
-You can follow the instructions on the GitHub page of this project, which roughly are:
-
 1. Add the required jQuery, Bootstrap 4, and Material icons to your page.
     ```
     <!-- Bootstrap CSS -->
