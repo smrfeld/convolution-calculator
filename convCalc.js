@@ -104,10 +104,10 @@ class Params {
         this.stride = stride;
 
         this.widthCanvas = widthCanvas;
-        console.log("Using width, height for canvas:", this.widthCanvas, heightCanvasFixed);
+        // console.log("Using width, height for canvas:", this.widthCanvas, heightCanvasFixed);
 
-        console.log("Changed params: (nx, nyInput, nzInput, padding, nFilters, filterSize, stride) = ",
-            this.nx, this.nyInput, this.nzInput, this.padding, this.nFilters, this.filterSize, this.stride);
+        // console.log("Changed params: (nx, nyInput, nzInput, padding, nFilters, filterSize, stride) = ",
+        //    this.nx, this.nyInput, this.nzInput, this.padding, this.nFilters, this.filterSize, this.stride);
 
         this.recalculate();
     }
@@ -709,7 +709,7 @@ var ds = new DrawingSelections();
 $( window ).resize(function() {    
     // Get width and height
     let widthCanvas = $("#ccSVG").width();
-    console.log("resizing because window height changed; new width: ", widthCanvas);
+    // console.log("resizing because window height changed; new width: ", widthCanvas);
 
     // Rescale
     p.rescale(widthCanvas);
@@ -732,7 +732,7 @@ function updateParamsFromUserInput() {
     var strideNew = parseInt($("#ccstride").val());
     let widthCanvas = $("#ccSVG").width();
 
-    console.log("Updated params from user input - width, height =", widthCanvas);
+    // console.log("Updated params from user input - width, height =", widthCanvas);
     updateParams(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew, widthCanvas);
 }
 
@@ -791,8 +791,8 @@ function updateParams(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, fi
         || paddingNew != p.padding || nFiltersNew != p.nFilters || filterSizeNew != p.filterSize
         || strideNew != p.stride || widthCanvas != p.widthCanvas) {
         
-        console.log("New params: (paddingNew, nFiltersNew, filterSizeNew, strideNew) = ",
-            paddingNew,nFiltersNew,filterSizeNew,strideNew);
+        // console.log("New params: (paddingNew, nFiltersNew, filterSizeNew, strideNew) = ",
+        // paddingNew,nFiltersNew,filterSizeNew,strideNew);
 
         // Update params
         p = new Params(nxNew, nyInputNew, nzInputNew, paddingNew, nFiltersNew, filterSizeNew, strideNew, widthCanvas);
@@ -1289,7 +1289,7 @@ function svgDrawTextZ(izLocalStart, izLocalEnd, izGlobalStart, nx, topLeft, face
 }
 
 function svgDraw1(p) {
-    console.log("drawing single");
+    // console.log("drawing single");
 
     // Draw input
     let iyStartForId = 0;
@@ -1315,7 +1315,7 @@ function svgDraw1(p) {
 }
 
 function svgDraw4(p) {
-    console.log("drawing four");
+    // console.log("drawing four");
 
     let pathsIn = svgDraw4InOut(
         p.nx, p.nyIn, p.nzIn,
@@ -1424,7 +1424,7 @@ function svgDraw4InOut(
 }
 
 function svgDraw2vert(p) {
-    console.log("drawing 2 vertical");
+    // console.log("drawing 2 vertical");
 
     let pathsIn = svgDraw2vertInOut(
         p.nx, p.nyIn, p.nzIn,
@@ -1502,7 +1502,7 @@ function svgDraw2vertInOut(
 }
 
 function svgDraw2horiz(p) {
-    console.log("drawing 2 horizontal");
+    // console.log("drawing 2 horizontal");
 
     let pathsIn = svgDraw2horizInOut(
         p.nx, p.nyIn, p.nzIn,
