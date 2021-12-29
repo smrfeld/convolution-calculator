@@ -79,7 +79,7 @@
         <h2>Embed this on your site</h2>
         
         <p>
-        This is a JS project (relies on jQuery and Bootstrap 4). You can embed it on your own page (it is under MIT license).
+        This is a JS project (relies on jQuery, Bootstrap 4 and Google Material icons). You can embed it on your own page (it is under MIT license).
         </p>
 
         <p>
@@ -87,14 +87,25 @@
         </p>
         
         <ol>
-            <li>Add the required jQuery JS and Bootstrap 4 stylesheet to your page.</li>
+            <li>Add the required jQuery JS, Bootstrap 4 and Google Material icons to your page. <br />
                     <code> 
+                        &lt;!-- Bootstrap CSS --&gt;<br />
                         &lt;link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous"&gt;<br />
-                        &lt;script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"&gt;&lt;/script&gt;
+                        <br />
+                        &lt;!-- Google Material Icons --&gt;<br />
+                        &lt;link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"&gt;<br />
+                        <br />
+                        &lt;!-- JQuery --&gt;<br />
+                        &lt;script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"&gt;&lt;/script&gt;<br />
                     </code>
-
-            <li>Grab the JS file from the <a href="https://github.com/smrfeld/convolution_calculator">GitHub page</a> of this project.</li>
-            <li>Insert the div where the content will be loaded.</li>
+            </li>
+            <li>Add this calculator (using jsDelivr):<br />
+                <code>
+                    &lt;script src="https://cdn.jsdelivr.net/gh/smrfeld/convolution-calculator/convCalc.min.js"&gt;&lt;/script&gt;<br />
+                </code>
+                Alternatively, you can grab the JS file from the <a href="https://github.com/smrfeld/convolution_calculator">GitHub page</a> of this project.
+            </li>
+            <li>Insert the div where the content will be loaded.<br />
                 <code> 
                     &lt;div id='ccContainer'&gt;&lt;/div&gt;
                 </code>
@@ -105,8 +116,8 @@
                     &lt;div id='ccContainer' style="width:800px;"&gt;&lt;/div&gt;
                 </code>
                 <br />
-
-            <li>Trigger the JS to inject the drawing into the div when the page loads.</li>
+            </li>
+            <li>Trigger the JS to inject the drawing into the div when the page loads.<br />
                 <code> 
                     &lt;script&gt;                <br />
                         $(document).ready(function() {                <br />
@@ -115,6 +126,7 @@
                         });                <br />
                     &lt;/script&gt;
                 </code>
+            </li>
         </ol>
           
         <h2>GitHub</h2>
